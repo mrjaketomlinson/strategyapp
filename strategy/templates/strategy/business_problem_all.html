@@ -12,11 +12,9 @@
         placeholder="Search...">
     </div>
     <div class="p-1">
-      <button type="button" id="createBusinessProblemBtn" onclick=""
-        class="btn" data-bs-toggle="offcanvas"
-        data-bs-target="#offcanvas" aria-controls="offcanvas">
+      <a id="createBusinessProblemBtn" class="btn" href="{% url 'strategy:business_problem_create' %}">
         <!-- <i class="material-icons">add_circle</i> --> +
-      </button>
+      </a>
     </div>
   </div>
   <table id="businessProblemsTable" class="table table-hover">

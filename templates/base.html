@@ -40,6 +40,27 @@
       </div>
     </div>
   </nav>
+
+  <!-- Messages -->
+  <div aria-live="polite" aria-atomic="true" class="fixed-top">
+    <div id="toast-container" class="toast-container p-3 top-0 end-0">
+      {% if messages %}
+        {% for message in messages %}
+          <div class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+              <strong class="me-auto">{{ message.level_tag|capfirst }}</strong>
+              <small class="text-muted"></small>
+              <button type="button" class="btn-close toast-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+              {{ message.message|safe }}
+            </div>
+          </div>
+        {% endfor %}
+      {% endif %}
+    </div>
+  </div>
+
   <main>
     {% block body %}{% endblock %}
   </main>
