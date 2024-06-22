@@ -1,3 +1,4 @@
+# Django
 from django.contrib.auth.models import (
     AbstractBaseUser,
     BaseUserManager,
@@ -48,6 +49,9 @@ class UserManager(BaseUserManager):
 class User(AbstractBaseUser, PermissionsMixin):
     """A user in the strategy application."""
 
+    organization = models.ForeignKey(
+        "Organization", on_delete=models.CASCADE, null=True
+    )
     email = models.EmailField(
         verbose_name="email",
         max_length=60,
@@ -111,3 +115,24 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.email
+
+
+class Organization(models.Model):
+    create_date = models.DateTimeField(auto_now_add=True)
+    modified_date = models.DateTimeField(auto_now=True)
+    name = models.CharField(max_length=255)
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.name
+
+
+class Team(models.Model):
+    create_date = models.DateTimeField(auto_now_add=True)
+    modified_date = models.DateTimeField(auto_now=True)
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
+    members = models.ManyToManyField(User)
+    name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.name

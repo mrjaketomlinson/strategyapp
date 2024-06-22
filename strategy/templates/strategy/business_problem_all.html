@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Business Problems{% endblock %}
+
+{% block body %}
+
+<div class="container">
+  <h1>Business Problems</h1>
+  <div class="d-flex">
+    <div class="flex-fill p-1">
+      <input class="form-control" type="text" id="searchInput" onkeyup="searchTable()"
+        placeholder="Search...">
+    </div>
+    <div class="p-1">
+      <button type="button" id="createBusinessProblemBtn" onclick=""
+        class="btn" data-bs-toggle="offcanvas"
+        data-bs-target="#offcanvas" aria-controls="offcanvas">
+        <!-- <i class="material-icons">add_circle</i> --> +
+      </button>
+    </div>
+  </div>
+  <table id="businessProblemsTable" class="table table-hover">
+    <thead>
+      <tr>
+        <th>Summary</th>
+        <th>Create Date</th>
+      </tr>
+    </thead>
+    {% for problem in business_problems %}
+      <tr>
+        <td>{{ problem.summary }}</td>
+        <td>{{ problem.create_date }}</td>
+      </tr>
+    {% endfor %}
+  </table>
+</div>
+
+{% endblock %}
