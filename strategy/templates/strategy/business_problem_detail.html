@@ -5,8 +5,89 @@
 {% block body %}
 
 <div class="container">
-  <h1>{{ problem.summary }}</h1>
+  <div class="row">
+    <div class="col-12 col-md-2 order-md-2 d-flex">
+      <div>
+        <a class="btn btn-primary mb-2 me-2" href="{% url 'strategy:business_problem_edit' bp_id=problem.pk %}">Edit</a>
+      </div>
+      <form action="{% url 'strategy:business_problem_delete' bp_id=problem.pk %}" method="POST">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger mb-2">Delete</button>
+      </form>
+    </div>
+    <div class="col-12 col-md-10 order-md-1">
+      <h1>{{ problem.summary }}</h1>
+    </div>
+  </div>
   <p>{{ problem.description }}</p>
+  <hr>
+  <div id="assumption">
+    <div class="d-flex justify-content-between mb-2">
+      <h2>Assumptions</h2>
+      <button id="assumption-add-btn" type="button" class="btn btn-primary" onclick="addAssumptionForm(this)" 
+        data-url="{% url 'strategy:assumption_create' related_obj='businessproblem' obj_id=problem.pk %}">Add</button>
+    </div>
+    <div id="assumptionList">
+      {% for assumption in assumptions %}
+        <p>{{ assumption.summary }}</p>
+      {% endfor %}
+    </div>
+  </div>
+    
+  <hr>
+
+  <div class="d-flex justify-content-between">
+    <h2>Strategies</h2>
+    <div>
+      <button type="button" class="btn btn-primary">Add</button>
+    </div>
+  </div>
+  {% for strategy in strategies %}
+    <p>{{ strategy.summary }}</p>
+  {% endfor %}
 </div>
+
+
+{% endblock %}
+
+{% block scripts %}
+
+<script type="text/javascript">
+  function addAssumptionForm(identifier) {
+    var url = $(identifier).data("url");
+    $.ajax({
+      url: url,
+      data: {},
+      dataType: "json",
+      success: function (data) {
+        $("#assumptionList").append(data.form);
+        var form = $('#assumptionList').find('form').last();
+        form.submit(function(event) {
+          event.preventDefault();
+          var formData = $(this).serialize();
+          $.ajax({
+            type: 'POST',
+            url: url,
+            data: formData,
+            success: function(response) {
+              if (response.is_success) {
+                var p = $('<p></p>').text(form.find("#id_summary").val());
+                form.replaceWith(p);
+              } else {
+                alert(response.msg);
+              }
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+              alert("Something went wrong. If the issue persists, please reach out to the Sapp team.");
+            }
+          });
+        });
+      },
+      error: function (jqXHR, textStatus, errorThrown) {
+        alert("Something went wrong. If the issue persists, please reach out to the Sapp team.");
+      }
+    });
+  }
+</script>
 
 {% endblock %}

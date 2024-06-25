@@ -68,4 +68,25 @@
   <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
   {% block scripts %}{% endblock %}
 </body>
+<script type="text/javascript">
+  $(document).ready(function() {
+    // Initialize Django toast messages
+    const toastElList = document.querySelectorAll('.toast');
+    const toastList = [...toastElList].map(toastEl => new bootstrap.Toast(toastEl))
+    var targetElement = document.getElementById("toast-container");
+    toastElList.forEach(function(toast, index) {
+      toastList[index].show();
+
+      setTimeout(function () {
+        toastList[index].hide();
+        toast.addEventListener("hidden.bs.toast", function () {
+          targetElement.removeChild(toast);
+        });
+      }, 5000);
+    });
+    // Initialize bootstrap tooltips
+    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+    const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+  });
+</script>
 </html>
