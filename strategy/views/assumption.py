@@ -71,39 +71,23 @@ def assumption_create(request, related_obj, obj_id):
         return JsonResponse(data)
 
 
-@require_GET
-def assumption_detail(request, assumption_id):
-    assumption = get_object_or_404(Assumption, pk=assumption_id)
-    context = {"assumption": assumption}
-    return render(request, "strategy/assumption_detail.html", context)
-
-
-def assumption_edit(request, assumption_id):
-    assumption = get_object_or_404(Assumption, pk=assumption_id)
-    if request.method == "POST":
-        form = AssumptionEditForm(request.POST, instance=assumption)
-        if form.is_valid():
-            assumption = form.save()
-            messages.success(request, "Update successful!")
-            return HttpResponseRedirect(request.META.get("HTTP_REFERER"))
-        else:
-            for err, message in form.errors.items():
-                messages.error(
-                    request, f'Field: {err}. Message: {"; ".join(m for m in message)}'
-                )
-            return HttpResponseRedirect(request.META.get("HTTP_REFERER"))
-    else:
-        initial = {"modified_by": request.user}
-        form = AssumptionEditForm(instance=assumption, initial=initial)
-        context = {
-            "form": form,
-            "form_id": "assumption_edit_form",
-            "url": reverse(
-                "strategy:assumption_edit", kwargs={"assumption_id": assumption.pk}
-            ),
-            "button": "Update",
+@require_POST
+def assumption_remove_relationship(request, assumption_id, related_obj, obj_id):
+    try:
+        model = apps.get_model("strategy", related_obj)
+        model_obj = get_object_or_404(model, pk=obj_id, organization=request.user.organization)
+        assumption = get_object_or_404(Assumption, pk=assumption_id, organization=request.user.organization)
+        model_obj.assumption_set.remove(assumption)
+        response = {
+            "is_success": True,
+            "msg": ""
         }
-        return render(request, "strategy/assumption_edit.html", context)
+    except Exception as e:
+        response = {
+            "is_success": False,
+            "msg": f"An exception was raised: {e}"
+        }
+    return JsonResponse(response)
 
 
 @require_POST

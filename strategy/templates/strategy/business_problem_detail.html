@@ -29,7 +29,13 @@
     </div>
     <div id="assumptionList">
       {% for assumption in assumptions %}
-        <p>{{ assumption.summary }}</p>
+        <div id="assumption{{assumption.pk}}" class="d-flex assumption-item">
+          <p class="me-1">{{ assumption.summary }}</p>
+          <form class="assumption-del-form" action="{% url 'strategy:assumption_remove_relationship' assumption_id=assumption.pk related_obj='businessproblem' obj_id=problem.pk %}" method="post">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-danger">del</button>
+          </form>
+        </div>
       {% endfor %}
     </div>
   </div>
@@ -73,6 +79,7 @@
               if (response.is_success) {
                 var p = $('<p></p>').text(form.find("#id_summary").val());
                 form.replaceWith(p);
+                // TODO: Add toast success
               } else {
                 alert(response.msg);
               }
@@ -88,6 +95,31 @@
       }
     });
   }
+  $(document).ready(function() {
+    $(".assumption-del-form").submit(function(event) {
+      event.preventDefault();
+      const form = $(this);
+      const actionUrl = form.attr('action');
+      const formData = form.serialize(); // Serialize the form data
+      var url = $(this).attr("action");
+      $.ajax({
+        type: 'POST',
+        url: url,
+        data: formData,
+        success: function(response) {
+          if (response.is_success) {
+            form.closest(".assumption-item").remove();
+            // TODO: Add toast success
+          } else {
+            alert(response.msg);
+          }
+        },
+        error: function(jqXHR, textStatus, errorThrown) {
+          alert("Something went wrong. If the issue persists, please reach out to the Sapp team.");
+        }
+      });
+    });
+  });
 </script>
 
 {% endblock %}
