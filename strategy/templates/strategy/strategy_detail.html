@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}Strategy{% endblock %}
+
+{% block body %}
+
+<div class="container">
+  <div class="row">
+    <div class="col-12 col-md-2 order-md-2 d-flex">
+      <div>
+        <a class="btn btn-primary mb-2 me-2" href="{% url 'strategy:strategy_edit' strategy_id=strategy.pk %}">Edit</a>
+      </div>
+      <form action="{% url 'strategy:strategy_delete' strategy_id=strategy.pk %}" method="POST">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger mb-2">Delete</button>
+      </form>
+    </div>
+    <div class="col-12 col-md-10 order-md-1">
+      <h1>{{ strategy.summary }}</h1>
+    </div>
+  </div>
+  <p>{{ strategy.description }}</p>
+
+  <hr>
+
+  <div class="d-flex justify-content-between">
+    <h2>Related business problems</h2>
+    {% comment %}
+    <!-- TODO: Add association button -->
+    <div>
+      <a class="btn btn-primary" href="{% url 'strategy:strategy_create' %}?business_problem_id={{problem.pk}}">Add</a>
+    </div>
+    {% endcomment %}
+  </div>
+  {% for problem in strategy.business_problems.all %}
+    <p><a href="{% url 'strategy:business_problem_detail' business_problem_id=problem.pk %}">{{ problem.summary }}</a></p>
+  {% endfor %}
+</div>
+
+
+{% endblock %}

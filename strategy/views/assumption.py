@@ -1,37 +1,42 @@
 # Django
 from django.apps import apps
 from django.contrib import messages
-from django.http import HttpResponseRedirect, JsonResponse
+from django.http import JsonResponse, HttpResponseRedirect
 from django.shortcuts import render, redirect, get_object_or_404
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.views.decorators.http import require_GET, require_POST
 
 # App
-from strategy.apps import StrategyConfig
 from strategy.forms import (
-    AssumptionCreateForm,
-    AssumptionEditForm,
-    BusinessProblemCreateForm,
+    AssumptionCreateForm
 )
-from strategy.models import BusinessProblem, Strategy, Assumption
+from strategy.models import Assumption
 
 
 def assumption_create(request, related_obj, obj_id):
     model = apps.get_model("strategy", related_obj)
     model_obj = get_object_or_404(model, pk=obj_id)
     if request.method == "POST":
+        pk = None
+        action = ""
+        msg = ""
+        is_success = False
         try:
             form = AssumptionCreateForm(request.POST)
             if form.is_valid():
                 assumption = form.save()
                 model_obj.assumption_set.add(assumption)
                 is_success = True
-                msg = ""
+                pk = assumption.pk
+                action = reverse("strategy:assumption_remove_relationship", kwargs={
+                    "assumption_id": pk,
+                    "related_obj": related_obj,
+                    "obj_id": obj_id
+                })
                 # messages.success(request, "Assumption created successfully!")
             else:
                 is_success = False
-                msg = ""
                 for err, message in form.errors.items():
                     # messages.error(
                     #     request, f'Field: {err}. Message: {"; ".join(m for m in message)}'
@@ -48,7 +53,13 @@ def assumption_create(request, related_obj, obj_id):
                 f"obj_id: {obj_id}. ",
                 e
             )
-        return JsonResponse({"is_success": is_success, "msg": msg})
+        json_response = {
+            "is_success": is_success,
+            "msg": msg,
+            "pk": pk,
+            "action": action
+        }
+        return JsonResponse(json_response)
     else:
         initial = {
             "organization": request.user.organization,
@@ -97,12 +108,12 @@ def assumption_delete(request, assumption_id):
             Assumption, pk=assumption_id, organization=request.user.organization
         )
         assumption.delete()
-        messages.success(request, "Business problem deleted successfully.")
+        messages.success(request, "Assumption deleted successfully.")
     except Exception as e:
-        messages.error(request, "There was an issue deleting that business problem.")
+        messages.error(request, "There was an issue deleting that assumption.")
         # TODO: proper logging
         print(
             f"assumption_delete Exception. user: {request.user}, assumption: {assumption_id}.",
             e,
         )
-    return redirect("strategy:assumption_all")
+    return HttpResponseRedirect(request.META.get("HTTP_REFERER", "/"))

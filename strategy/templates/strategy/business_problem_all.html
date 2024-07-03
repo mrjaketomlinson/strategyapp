@@ -26,7 +26,7 @@
     </thead>
     {% for problem in business_problems %}
       <tr>
-        <td><a href="{% url 'strategy:business_problem_detail' bp_id=problem.pk %}">{{ problem.summary }}</a></td>
+        <td><a href="{% url 'strategy:business_problem_detail' business_problem_id=problem.pk %}">{{ problem.summary }}</a></td>
         <td>{{ problem.create_date }}</td>
       </tr>
     {% endfor %}

@@ -8,9 +8,9 @@
   <div class="row">
     <div class="col-12 col-md-2 order-md-2 d-flex">
       <div>
-        <a class="btn btn-primary mb-2 me-2" href="{% url 'strategy:business_problem_edit' bp_id=problem.pk %}">Edit</a>
+        <a class="btn btn-primary mb-2 me-2" href="{% url 'strategy:business_problem_edit' business_problem_id=problem.pk %}">Edit</a>
       </div>
-      <form action="{% url 'strategy:business_problem_delete' bp_id=problem.pk %}" method="POST">
+      <form action="{% url 'strategy:business_problem_delete' business_problem_id=problem.pk %}" method="POST">
         {% csrf_token %}
         <button type="submit" class="btn btn-danger mb-2">Delete</button>
       </form>
@@ -30,7 +30,7 @@
     <div id="assumptionList">
       {% for assumption in assumptions %}
         <div id="assumption{{assumption.pk}}" class="d-flex assumption-item">
-          <p class="me-1">{{ assumption.summary }}</p>
+          <p class="me-1 assumption{{assumption.pk}}-summary">{{ assumption.summary }}</p>
           <form class="assumption-del-form" action="{% url 'strategy:assumption_remove_relationship' assumption_id=assumption.pk related_obj='businessproblem' obj_id=problem.pk %}" method="post">
             {% csrf_token %}
             <button type="submit" class="btn btn-sm btn-danger">del</button>
@@ -45,12 +45,21 @@
   <div class="d-flex justify-content-between">
     <h2>Strategies</h2>
     <div>
-      <button type="button" class="btn btn-primary">Add</button>
+      <a class="btn btn-primary" href="{% url 'strategy:strategy_create' %}?business_problem_id={{problem.pk}}">Add</a>
     </div>
   </div>
   {% for strategy in strategies %}
-    <p>{{ strategy.summary }}</p>
+    <p><a href="{% url 'strategy:strategy_detail' strategy_id=strategy.pk %}">{{ strategy.summary }}</a></p>
   {% endfor %}
+</div>
+
+
+<div id="assumption-template" class="d-flex assumption-item d-none">
+  <p class="me-1"></p>
+  <form class="assumption-del-form" action="" method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-sm btn-danger">del</button>
+  </form>
 </div>
 
 
@@ -77,10 +86,17 @@
             data: formData,
             success: function(response) {
               if (response.is_success) {
-                var p = $('<p></p>').text(form.find("#id_summary").val());
-                form.replaceWith(p);
+                var assumption = $("#assumption-template").clone();
+                assumption.attr("id", `assumption${response.pk}`);
+                assumption.find("form").attr("action", response.action);
+                assumption.find("form").on("submit", deleteAssumption);
+                assumption.find("p").text(form.find("#id_summary").val());
+                assumption.find("p").addClass(`assumption${response.pk}-summary`);
+                assumption.removeClass("d-none");
+                form.parent("div").replaceWith(assumption);
                 // TODO: Add toast success
               } else {
+                // TODO: Proper error/message handling
                 alert(response.msg);
               }
             },
@@ -95,30 +111,31 @@
       }
     });
   }
-  $(document).ready(function() {
-    $(".assumption-del-form").submit(function(event) {
-      event.preventDefault();
-      const form = $(this);
-      const actionUrl = form.attr('action');
-      const formData = form.serialize(); // Serialize the form data
-      var url = $(this).attr("action");
-      $.ajax({
-        type: 'POST',
-        url: url,
-        data: formData,
-        success: function(response) {
-          if (response.is_success) {
-            form.closest(".assumption-item").remove();
-            // TODO: Add toast success
-          } else {
-            alert(response.msg);
-          }
-        },
-        error: function(jqXHR, textStatus, errorThrown) {
-          alert("Something went wrong. If the issue persists, please reach out to the Sapp team.");
+  function deleteAssumption(event) {
+    event.preventDefault();
+    const form = $(this);
+    const actionUrl = form.attr('action');
+    const formData = form.serialize(); // Serialize the form data
+    var url = $(this).attr("action");
+    $.ajax({
+      type: 'POST',
+      url: url,
+      data: formData,
+      success: function(response) {
+        if (response.is_success) {
+          form.closest(".assumption-item").remove();
+          // TODO: Add toast success
+        } else {
+          alert(response.msg);
         }
-      });
+      },
+      error: function(jqXHR, textStatus, errorThrown) {
+        alert("Something went wrong. If the issue persists, please reach out to the Sapp team.");
+      }
     });
+  }
+  $(document).ready(function() {
+    $(".assumption-del-form").on("submit", deleteAssumption);
   });
 </script>
 

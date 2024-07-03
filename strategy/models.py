@@ -41,7 +41,7 @@ class Strategy(models.Model):
     )
     summary = models.CharField(max_length=255)
     description = models.TextField(blank=True)
-    business_problem = models.ManyToManyField(BusinessProblem)
+    business_problems = models.ManyToManyField(BusinessProblem)
 
 
 class Assumption(models.Model):
@@ -60,5 +60,5 @@ class Assumption(models.Model):
     )
     summary = models.CharField(max_length=255)
     description = models.TextField(blank=True)
-    business_problem = models.ManyToManyField(BusinessProblem)
-    strategy = models.ManyToManyField(Strategy)
+    business_problems = models.ManyToManyField(BusinessProblem)
+    strategies = models.ManyToManyField(Strategy)
