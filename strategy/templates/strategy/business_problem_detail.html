@@ -8,11 +8,19 @@
   <div class="row">
     <div class="col-12 col-md-2 order-md-2 d-flex">
       <div>
-        <a class="btn btn-primary mb-2 me-2" href="{% url 'strategy:business_problem_edit' business_problem_id=problem.pk %}">Edit</a>
+        <a class="btn me-2" href="{% url 'strategy:business_problem_edit' business_problem_id=problem.pk %}">
+          <span class="material-symbols-outlined primary-hover">
+            edit
+          </span>
+        </a>
       </div>
       <form action="{% url 'strategy:business_problem_delete' business_problem_id=problem.pk %}" method="POST">
         {% csrf_token %}
-        <button type="submit" class="btn btn-danger mb-2">Delete</button>
+        <button type="submit" class="btn">
+          <span class="material-symbols-outlined danger-hover">
+            delete
+          </span>
+        </button>
       </form>
     </div>
     <div class="col-12 col-md-10 order-md-1">
@@ -22,10 +30,12 @@
   <p>{{ problem.description }}</p>
   <hr>
   <div id="assumption">
-    <div class="d-flex justify-content-between mb-2">
+    <div class="d-flex justify-content-between">
       <h2>Assumptions</h2>
-      <button id="assumption-add-btn" type="button" class="btn btn-primary" onclick="addAssumptionForm(this)" 
-        data-url="{% url 'strategy:assumption_create' related_obj='businessproblem' obj_id=problem.pk %}">Add</button>
+      <div>
+        <button id="assumption-add-btn" type="button" class="btn btn-primary" onclick="addAssumptionForm(this)" 
+          data-url="{% url 'strategy:assumption_create' related_obj='businessproblem' obj_id=problem.pk %}">Add</button>
+      </div>
     </div>
     <div id="assumptionList">
       {% for assumption in assumptions %}
@@ -33,7 +43,11 @@
           <p class="me-1 assumption{{assumption.pk}}-summary">{{ assumption.summary }}</p>
           <form class="assumption-del-form" action="{% url 'strategy:assumption_remove_relationship' assumption_id=assumption.pk related_obj='businessproblem' obj_id=problem.pk %}" method="post">
             {% csrf_token %}
-            <button type="submit" class="btn btn-sm btn-danger">del</button>
+            <button type="submit" class="btn p-0 m-0">
+              <span class="material-symbols-outlined danger-hover">
+                delete
+              </span>
+            </button>
           </form>
         </div>
       {% endfor %}
@@ -49,7 +63,34 @@
     </div>
   </div>
   {% for strategy in strategies %}
-    <p><a href="{% url 'strategy:strategy_detail' strategy_id=strategy.pk %}">{{ strategy.summary }}</a></p>
+    <div class="card mb-2">
+      <div class="card-header">
+        <ul class="nav nav-tabs card-header-tabs">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="strategy-details-tab" data-bs-toggle="tab" data-bs-target="#strategy-details-tab-pane" type="button" role="tab" aria-controls="strategy-details-tab-pane" aria-selected="true">Details</button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="strategy-prioritization-tab" data-bs-toggle="tab" data-bs-target="#strategy-prioritization-tab-pane" type="button" role="tab" aria-controls="strategy-prioritization-tab-pane" aria-selected="false">Prioritization</button>
+          </li>
+        </ul>
+      </div>
+      <div class="tab-content">
+        <div class="tab-pane fade show active" id="strategy-details-tab-pane" role="tabpanel" aria-labelledby="strategy-details-tab" tabindex="0">
+          <div class="card-body">
+            <h5 class="card-title"><a href="{% url 'strategy:strategy_detail' strategy_id=strategy.pk %}">{{ strategy.summary }}</a></h5>
+            <p class="card-text">{{ strategy.description }}</p>
+            <!-- <a href="#" class="btn btn-primary">Go somewhere</a> -->
+          </div>
+        </div>
+        <div class="tab-pane fade" id="strategy-prioritization-tab-pane" role="tabpanel" aria-labelledby="strategy-prioritization-tab" tabindex="0">
+          <div class="card-body">
+            <h5 class="card-title">Coming soon...</h5>
+            <p class="card-text"></p>
+            <!-- <a href="#" class="btn btn-primary">Go somewhere</a> -->
+          </div>
+        </div>
+      </div>
+    </div>
   {% endfor %}
 </div>
 
