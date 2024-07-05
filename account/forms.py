@@ -4,7 +4,7 @@ from django.contrib.auth.forms import ReadOnlyPasswordHashField, AuthenticationF
 from django.core.exceptions import ValidationError
 
 # App
-from account.models import User
+from account.models import User, Organization, Team
 
 
 class UserCreationForm(forms.ModelForm):
@@ -18,13 +18,13 @@ class UserCreationForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(UserCreationForm, self).__init__(*args, **kwargs)
-        self.fields['password1'].help_text = (
+        self.fields["password1"].help_text = (
             "Your password cannot be entirely numeric, related to your "
             "personal info, or a commonly used password. It must be at "
             "least 8 characters in length."
         )
         for visible in self.visible_fields():
-            visible.field.widget.attrs['class'] = 'form-control'
+            visible.field.widget.attrs["class"] = "form-control"
 
     class Meta:
         model = User
@@ -72,4 +72,33 @@ class UserLoginForm(AuthenticationForm):
     def __init__(self, *args, **kwargs):
         super(UserLoginForm, self).__init__(*args, **kwargs)
         for visible in self.visible_fields():
-            visible.field.widget.attrs['class'] = 'form-control'
+            visible.field.widget.attrs["class"] = "form-control"
+
+
+class OrganizationCreateForm(forms.ModelForm):
+    class Meta:
+        model = Organization
+        fields = ["name", "domain"]
+
+    def __init__(self, *args, **kwargs):
+        super(OrganizationCreateForm, self).__init__(*args, **kwargs)
+        for visible in self.visible_fields():
+            visible.field.widget.attrs["class"] = "form-control"
+
+
+class TeamCreateForm(forms.ModelForm):
+    class Meta:
+        model = Team
+        fields = [
+            "name",
+            "members",
+            "organization",
+        ]
+        widgets = {
+            "organization": forms.HiddenInput(),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super(TeamCreateForm, self).__init__(*args, **kwargs)
+        for visible in self.visible_fields():
+            visible.field.widget.attrs["class"] = "form-control"

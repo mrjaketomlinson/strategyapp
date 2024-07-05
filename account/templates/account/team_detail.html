@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}{{ team.name }}{% endblock %}
+
+{% block body %}
+
+<div class="container">
+  <h1>{{ team.name }}</h1>
+  <hr>
+  <div class="d-flex justify-content-between">
+    <h2>Members</h2>
+    <div>
+      <button type="button" class="btn primary-hover">
+        <span class="material-symbols-outlined">
+          edit
+        </span>
+      </button>
+    </div>
+  </div>
+  {% for user in team.members.all %}
+    <p>{{ user.get_full_name }}</p>
+  {% endfor %}
+  <hr>
+  <h2>Related business problems</h2>
+  {% for problem in team.business_problem_set.all %}
+    <p>{{ problem.summary }}</p>
+  {% endfor %}
+</div>
+
+{% endblock %}

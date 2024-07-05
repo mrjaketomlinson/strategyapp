@@ -5,13 +5,16 @@ from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.template.loader import render_to_string
 from django.urls import reverse
-from django.views.decorators.http import require_GET, require_POST
+from django.views.decorators.http import require_GET, require_POST, require_http_methods
 
 # App
+from account.decorators import logged_in_user
 from strategy.forms import StrategyCreateForm, StrategyEditForm
 from strategy.models import BusinessProblem, Strategy, Assumption
 
 
+@logged_in_user
+@require_http_methods(["GET", "POST"])
 def strategy_create(request):
     if request.method == "POST":
         form = StrategyCreateForm(request.POST)
@@ -56,6 +59,7 @@ def strategy_create(request):
         return render(request, "strategy/strategy_create.html", context)
 
 
+@logged_in_user
 @require_GET
 def strategy_detail(request, strategy_id):
     strategy = get_object_or_404(
@@ -101,6 +105,8 @@ def strategy_edit(request, strategy_id):
         return render(request, "strategy/strategy_edit.html", context)
 
 
+@logged_in_user
+@require_POST
 def strategy_delete(request, strategy_id):
     try:
         strategy = get_object_or_404(

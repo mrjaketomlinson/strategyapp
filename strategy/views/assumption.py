@@ -5,15 +5,18 @@ from django.http import JsonResponse, HttpResponseRedirect
 from django.shortcuts import render, redirect, get_object_or_404
 from django.template.loader import render_to_string
 from django.urls import reverse
-from django.views.decorators.http import require_GET, require_POST
+from django.views.decorators.http import require_GET, require_POST, require_http_methods
 
 # App
+from account.decorators import logged_in_user
 from strategy.forms import (
     AssumptionCreateForm
 )
 from strategy.models import Assumption
 
 
+@logged_in_user
+@require_http_methods(["GET", "POST"])
 def assumption_create(request, related_obj, obj_id):
     model = apps.get_model("strategy", related_obj)
     model_obj = get_object_or_404(model, pk=obj_id)
@@ -82,6 +85,7 @@ def assumption_create(request, related_obj, obj_id):
         return JsonResponse(data)
 
 
+@logged_in_user
 @require_POST
 def assumption_remove_relationship(request, assumption_id, related_obj, obj_id):
     try:
@@ -101,6 +105,7 @@ def assumption_remove_relationship(request, assumption_id, related_obj, obj_id):
     return JsonResponse(response)
 
 
+@logged_in_user
 @require_POST
 def assumption_delete(request, assumption_id):
     try:

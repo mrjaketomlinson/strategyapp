@@ -6,6 +6,18 @@ from django.contrib.auth.models import (
 )
 from django.db import models
 
+# Python
+import re
+from django.core.exceptions import ValidationError
+
+
+def validate_domain(value):
+    # Regular expression pattern to match a valid domain name
+    pattern = r"^(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$"
+
+    if not re.match(pattern, value):
+        raise ValidationError("Enter a valid domain name.")
+
 
 class UserManager(BaseUserManager):
     def create_user(self, email, first_name, last_name, password=None):
@@ -113,6 +125,14 @@ class User(AbstractBaseUser, PermissionsMixin):
     def get_short_name(self):
         return self.first_name
 
+    def get_email_domain(self):
+        pattern = r"@([\w.-]+)$"
+        match = re.search(pattern, self.email)
+        if match:
+            return match.group(1)
+        else:
+            return ""
+
     def __str__(self):
         return self.email
 
@@ -122,6 +142,11 @@ class Organization(models.Model):
     modified_date = models.DateTimeField(auto_now=True)
     name = models.CharField(max_length=255)
     is_active = models.BooleanField(default=True)
+    domain = models.CharField(
+        max_length=255,
+        validators=[validate_domain],
+        help_text="Enter a valid domain name (e.g., example.com).",
+    )
 
     def __str__(self):
         return self.name

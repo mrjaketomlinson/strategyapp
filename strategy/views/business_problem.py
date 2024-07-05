@@ -3,13 +3,15 @@ from django.contrib import messages
 from django.http import HttpResponseRedirect
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
-from django.views.decorators.http import require_GET, require_POST
+from django.views.decorators.http import require_GET, require_POST, require_http_methods
 
 # App
+from account.decorators import logged_in_user
 from strategy.forms import BusinessProblemCreateForm, BusinessProblemEditForm
 from strategy.models import BusinessProblem, Strategy, Assumption
 
 
+@logged_in_user
 @require_GET
 def business_problem_all(request):
     business_problems = BusinessProblem.objects.filter(
@@ -19,9 +21,11 @@ def business_problem_all(request):
     return render(request, "strategy/business_problem_all.html", context)
 
 
+@logged_in_user
+@require_http_methods(["GET", "POST"])
 def business_problem_create(request):
     if request.method == "POST":
-        form = BusinessProblemCreateForm(request.POST)
+        form = BusinessProblemCreateForm(request.POST, request=request)
         if form.is_valid():
             business_problem = form.save()
             messages.success(request, "Business problem created successfully!")
@@ -34,23 +38,23 @@ def business_problem_create(request):
                 messages.error(
                     request, f'Field: {err}. Message: {"; ".join(m for m in message)}'
                 )
-            return HttpResponseRedirect(request.META.get("HTTP_REFERER"))
     else:
         initial = {
             "organization": request.user.organization,
             "created_by": request.user,
             "modified_by": request.user,
         }
-        form = BusinessProblemCreateForm(initial=initial)
-        context = {
-            "form": form,
-            "form_id": "business_problem_create_form",
-            "url": reverse("strategy:business_problem_create"),
-            "button": "Create",
-        }
-        return render(request, "strategy/business_problem_create.html", context)
+        form = BusinessProblemCreateForm(initial=initial, request=request)
+    context = {
+        "form": form,
+        "form_id": "business_problem_create_form",
+        "url": reverse("strategy:business_problem_create"),
+        "button": "Create",
+    }
+    return render(request, "strategy/business_problem_create.html", context)
 
 
+@logged_in_user
 @require_GET
 def business_problem_detail(request, business_problem_id):
     business_problem = get_object_or_404(
@@ -66,10 +70,12 @@ def business_problem_detail(request, business_problem_id):
     return render(request, "strategy/business_problem_detail.html", context)
 
 
+@logged_in_user
+@require_http_methods(["GET", "POST"])
 def business_problem_edit(request, business_problem_id):
     business_problem = get_object_or_404(BusinessProblem, pk=business_problem_id)
     if request.method == "POST":
-        form = BusinessProblemEditForm(request.POST, instance=business_problem)
+        form = BusinessProblemEditForm(request.POST, instance=business_problem, request=request)
         if form.is_valid():
             business_problem = form.save()
             messages.success(request, "Update successful!")
@@ -85,7 +91,7 @@ def business_problem_edit(request, business_problem_id):
             return HttpResponseRedirect(request.META.get("HTTP_REFERER"))
     else:
         initial = {"modified_by": request.user}
-        form = BusinessProblemEditForm(instance=business_problem, initial=initial)
+        form = BusinessProblemEditForm(instance=business_problem, initial=initial, request=request)
         context = {
             "form": form,
             "form_id": "business_problem_edit_form",
@@ -98,6 +104,7 @@ def business_problem_edit(request, business_problem_id):
         return render(request, "strategy/business_problem_edit.html", context)
 
 
+@logged_in_user
 @require_POST
 def business_problem_delete(request, business_problem_id):
     try:

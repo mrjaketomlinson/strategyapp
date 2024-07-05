@@ -6,7 +6,7 @@
 
 <div class="container">
   <div class="row">
-    <div class="col-12 col-md-2 order-md-2 d-flex">
+    <div class="col-12 col-md-2 order-md-2 d-flex justify-content-end">
       <div>
         <a class="btn me-2" href="{% url 'strategy:business_problem_edit' business_problem_id=problem.pk %}">
           <span class="material-symbols-outlined primary-hover">
@@ -27,7 +27,8 @@
       <h1>{{ problem.summary }}</h1>
     </div>
   </div>
-  <p>{{ problem.description }}</p>
+  <i>Teams: {{ problem.teams.all|join:", " }}</i>
+  <p class="mt-2">{{ problem.description }}</p>
   <hr>
   <div id="assumption">
     <div class="d-flex justify-content-between">

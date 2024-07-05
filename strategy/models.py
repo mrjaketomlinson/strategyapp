@@ -8,7 +8,7 @@ from account.models import Organization, Team
 
 class BusinessProblem(models.Model):
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
-    team = models.ManyToManyField(Team)
+    teams = models.ManyToManyField(Team)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.DO_NOTHING,

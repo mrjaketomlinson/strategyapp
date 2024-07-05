@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block title %} | Organization sign up{% endblock %}
+
+{% block body %}
+
+<div class="container mt-5">
+  <h1>What organization are you strategizing with?</h1>
+  {% include "base_form.html" %}
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+
+<script type="text/javascript">
+  $(document).ready(function() {
+    $(".navbar").remove();
+  });
+</script>
+
+{% endblock %}
