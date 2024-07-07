@@ -23,6 +23,12 @@ class BusinessProblem(models.Model):
     )
     summary = models.CharField(max_length=255)
     description = models.TextField(blank=True)
+    is_public = models.BooleanField(default=True)
+    category = models.CharField(
+        max_length=20,
+        choices=(("Problem", "Problem"), ("Opportunity", "Opportunity")),
+        default="Problem",
+    )
 
 
 class Strategy(models.Model):
@@ -42,6 +48,8 @@ class Strategy(models.Model):
     summary = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     business_problems = models.ManyToManyField(BusinessProblem)
+    # is_chosen
+    # Voting mechanism
 
 
 class Assumption(models.Model):
@@ -60,5 +68,16 @@ class Assumption(models.Model):
     )
     summary = models.CharField(max_length=255)
     description = models.TextField(blank=True)
-    business_problems = models.ManyToManyField(BusinessProblem)
+    business_problem = models.ForeignKey(BusinessProblem, on_delete=models.CASCADE)
     strategies = models.ManyToManyField(Strategy)
+
+
+# class Kpi(models.Model):
+#     summary = ...
+#     description = ...
+#     goal = ...
+#     operator = ...
+
+
+# class KpiUpdate(models.Model):
+#     ...

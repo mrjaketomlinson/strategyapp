@@ -78,6 +78,14 @@ class UserLogin(LoginView):
 
 
 @logged_in_user
+@require_GET
+def team_all(request):
+    teams = Team.objects.filter(organization=request.user.organization)
+    context = {"teams": teams}
+    return render(request, "account/team_all.html", context)
+
+
+@logged_in_user
 @require_http_methods(["GET", "POST"])
 def team_create(request):
     if request.method == "POST":

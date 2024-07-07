@@ -6,13 +6,21 @@
 
 <div class="container">
   <div class="row">
-    <div class="col-12 col-md-2 order-md-2 d-flex">
+    <div class="col-12 col-md-2 order-md-2 d-flex justify-content-end">
       <div>
-        <a class="btn btn-primary mb-2 me-2" href="{% url 'strategy:strategy_edit' strategy_id=strategy.pk %}">Edit</a>
+        <a class="btn primary-hover mb-2 me-2" href="{% url 'strategy:strategy_edit' strategy_id=strategy.pk %}">
+          <span class="material-symbols-outlined">
+            edit
+          </span>
+        </a>
       </div>
       <form action="{% url 'strategy:strategy_delete' strategy_id=strategy.pk %}" method="POST">
         {% csrf_token %}
-        <button type="submit" class="btn btn-danger mb-2">Delete</button>
+        <button type="submit" class="btn danger-hover mb-2">
+          <span class="material-symbols-outlined">
+            delete
+          </span>
+        </button>
       </form>
     </div>
     <div class="col-12 col-md-10 order-md-1">

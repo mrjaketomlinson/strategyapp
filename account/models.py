@@ -152,11 +152,20 @@ class Organization(models.Model):
         return self.name
 
 
+class TeamMember(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    team = models.ForeignKey("Team", on_delete=models.CASCADE)
+    role = models.CharField(
+        max_length=20,
+        choices=(("Admin", "Admin"), ("Member", "Member"), ("Viewer", "Viewer")),
+    )
+
+
 class Team(models.Model):
     create_date = models.DateTimeField(auto_now_add=True)
     modified_date = models.DateTimeField(auto_now=True)
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
-    members = models.ManyToManyField(User)
+    members = models.ManyToManyField(User, through=TeamMember)
     name = models.CharField(max_length=255)
 
     def __str__(self):

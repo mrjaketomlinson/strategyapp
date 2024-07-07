@@ -29,16 +29,25 @@
 <body class="">
   <nav class="navbar navbar-expand-lg">
     <div class="container-fluid">
-      <a class="navbar-brand" href="{% url 'account:index' %}">Sapp</a>
+      <a class="navbar-brand pb-3" href="{% url 'account:index' %}">Bould</a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navContents" aria-controls="navContents" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
       </button>
       {% if request.user.is_authenticated %}
         <div class="collapse navbar-collapse" id="navContents">
           <div class="navbar-nav me-auto">
-            <a class="nav-link active" aria-current="page" href="#">Home</a>
+            <a class="nav-link" data-bs-toggle="tooltip" data-bs-title="Teams" data-bs-placement="bottom" href="{% url 'account:team_all' %}">
+              <span class="material-symbols-outlined">
+                group
+              </span>
+            </a>
+            <a class="nav-link" data-bs-toggle="tooltip" data-bs-title="Business Problems" data-bs-placement="bottom" href="{% url 'strategy:business_problem_all' %}">
+              <span class="material-symbols-outlined">
+                problem
+              </span>
+            </a>
           </div>
-          <div class="d-flex">
+          <div class="d-flex pb-3">
             <form id="logout-form" method="post" action="{% url 'logout' %}">
               {% csrf_token %}
               <button type="submit" class="btn btn-link nav-link">Logout</button>
@@ -47,7 +56,7 @@
         </div>
       {% else %}
         <div class="collapse navbar-collapse justify-content-end" id="navContents">
-          <div class="navbar-nav">
+          <div class="navbar-nav pb-3">
             <a class="nav-link" href="{% url 'account:login' %}">Log In</a>
             <a class="nav-link" href="{% url 'account:signup' %}">Sign Up</a>
           </div>

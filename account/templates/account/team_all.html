@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Teams{% endblock %}
+
+{% block body %}
+
+<div class="container">
+  <h1>Teams</h1>
+  <div class="d-flex">
+    <div class="flex-fill p-1">
+      <input class="form-control" type="text" id="searchInput" onkeyup="searchTable()"
+        placeholder="Search...">
+    </div>
+    <div class="p-1">
+      <a id="createTeamBtn" class="btn" href="{% url 'account:team_create' %}">
+        <span class="material-symbols-outlined">
+          add
+        </span>
+      </a>
+    </div>
+  </div>
+  <table id="teamsTable" class="table table-hover">
+    <thead>
+      <tr>
+        <th>Summary</th>
+        <th>Members</th>
+      </tr>
+    </thead>
+    {% for team in teams %}
+      <tr>
+        <td><a href="{% url 'account:team_detail' team_id=team.pk %}">{{ team.name }}</a></td>
+        <td>{{ team.members.all|length }}</td>
+      </tr>
+    {% endfor %}
+  </table>
+</div>
+
+{% endblock %}
