@@ -1,34 +1,33 @@
 # Django
 from django import forms
-
 # App
 from account.models import Team
-from strategy.models import BusinessProblem
+from project.models import Project
 from utils.form_utils import add_classes
 
 
-class BusinessProblemCreateForm(forms.ModelForm):
+class ProjectCreateForm(forms.ModelForm):
     class Meta:
-        model = BusinessProblem
+        model = Project
         fields = [
             "organization",
+            "strategy",
+            "teams",
             "created_by",
             "modified_by",
-            "is_public",
-            "category",
             "summary",
-            "teams",
-            "description",
+            "description"
         ]
         widgets = {
             "organization": forms.HiddenInput(),
+            "strategy": forms.HiddenInput(),
             "created_by": forms.HiddenInput(),
-            "modified_by": forms.HiddenInput(),
+            "modified_by": forms.HiddenInput()
         }
-
+    
     def __init__(self, *args, **kwargs):
         self.request = kwargs.pop("request", None)
-        super(BusinessProblemCreateForm, self).__init__(*args, **kwargs)
+        super(ProjectCreateForm, self).__init__(*args, **kwargs)
         if self.request:
             self.fields["teams"].queryset = Team.objects.filter(
                 organization=self.request.user.organization
@@ -37,22 +36,20 @@ class BusinessProblemCreateForm(forms.ModelForm):
             add_classes(visible)
 
 
-class BusinessProblemEditForm(forms.ModelForm):
+class ProjectEditForm(forms.ModelForm):
     class Meta:
-        model = BusinessProblem
+        model = Project
         fields = [
             "modified_by",
-            "summary",
-            "is_public",
-            "category",
             "teams",
+            "summary",
             "description",
         ]
         widgets = {"modified_by": forms.HiddenInput()}
 
     def __init__(self, *args, **kwargs):
         self.request = kwargs.pop("request", None)
-        super(BusinessProblemEditForm, self).__init__(*args, **kwargs)
+        super(ProjectEditForm, self).__init__(*args, **kwargs)
         if self.request:
             self.fields["teams"].queryset = Team.objects.filter(
                 organization=self.request.user.organization

@@ -3,6 +3,7 @@ from django import forms
 
 # App
 from strategy.models import Strategy
+from utils.form_utils import add_classes
 
 
 class StrategyCreateForm(forms.ModelForm):
@@ -26,7 +27,7 @@ class StrategyCreateForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(StrategyCreateForm, self).__init__(*args, **kwargs)
         for visible in self.visible_fields():
-            visible.field.widget.attrs["class"] = "form-control"
+            add_classes(visible)
 
 
 class StrategyEditForm(forms.ModelForm):
@@ -44,4 +45,4 @@ class StrategyEditForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(StrategyEditForm, self).__init__(*args, **kwargs)
         for visible in self.visible_fields():
-            visible.field.widget.attrs["class"] = "form-control"
+            add_classes(visible)

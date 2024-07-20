@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}Project{% endblock %}
+
+{% block body %}
+
+<div class="container">
+  <div class="row">
+    <div class="col-12 col-md-2 order-md-2 d-flex justify-content-end">
+      <div>
+        <a class="btn primary-hover mb-2 me-2" href="{% url 'project:project_edit' project_id=project.pk %}">
+          <span class="material-symbols-outlined">
+            edit
+          </span>
+        </a>
+      </div>
+      <form action="{% url 'project:project_delete' project_id=project.pk %}" method="POST">
+        {% csrf_token %}
+        <button type="submit" class="btn danger-hover mb-2">
+          <span class="material-symbols-outlined">
+            delete
+          </span>
+        </button>
+      </form>
+    </div>
+    <div class="col-12 col-md-10 order-md-1">
+      <h1>{{ project.summary }}</h1>
+    </div>
+  </div>
+  <i>Teams: {{ project.teams.all|join:", " }}</i>
+  <p class="mt-2">{{ project.description }}</p>
+  
+{% endblock %}

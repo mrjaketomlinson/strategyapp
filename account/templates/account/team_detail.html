@@ -23,7 +23,7 @@
   <hr>
   <h2>Related business problems</h2>
   {% for problem in team.businessproblem_set.all %}
-    <p>{{ problem.summary }}</p>
+    <p><a href="{% url 'strategy:business_problem_detail' business_problem_id=problem.pk %}">{{ problem.summary }}</a></p>
   {% endfor %}
 </div>
 

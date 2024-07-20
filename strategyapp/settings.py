@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     # Strategy
     "account.apps.AccountConfig",
     "strategy.apps.StrategyConfig",
+    "project.apps.ProjectConfig",
 ]
 
 MIDDLEWARE = [

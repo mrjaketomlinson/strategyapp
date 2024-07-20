@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}Projects{% endblock %}
+
+{% block body %}
+
+<div class="container">
+  <h1>Projects</h1>
+  <div class="d-flex">
+    <div class="flex-fill p-1">
+      <input class="form-control" type="text" id="searchInput" onkeyup="searchTable()"
+        placeholder="Search...">
+    </div>
+  </div>
+  <table id="projectTable" class="table table-hover">
+    <thead>
+      <tr>
+        <th>Summary</th>
+        <th>Create Date</th>
+      </tr>
+    </thead>
+    {% for project in projects %}
+      <tr>
+        <td><a href="{% url 'project:project_detail' project_id=project.pk %}">{{ project.summary }}</a></td>
+        <td>{{ project.create_date }}</td>
+      </tr>
+    {% endfor %}
+  </table>
+</div>
+
+{% endblock %}

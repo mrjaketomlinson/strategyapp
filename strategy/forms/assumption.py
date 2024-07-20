@@ -2,6 +2,7 @@
 from django import forms
 # App
 from strategy.models import Assumption, BusinessProblem
+from utils.form_utils import add_classes
 
 
 class AssumptionCreateForm(forms.ModelForm):
@@ -23,7 +24,7 @@ class AssumptionCreateForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(AssumptionCreateForm, self).__init__(*args, **kwargs)
         for visible in self.visible_fields():
-            visible.field.widget.attrs['class'] = 'form-control'
+            add_classes(visible)
 
 
 class AssumptionEditForm(forms.ModelForm):
@@ -41,4 +42,4 @@ class AssumptionEditForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(AssumptionEditForm, self).__init__(*args, **kwargs)
         for visible in self.visible_fields():
-            visible.field.widget.attrs['class'] = 'form-control'
+            add_classes(visible)

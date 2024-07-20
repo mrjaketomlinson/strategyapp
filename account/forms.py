@@ -5,6 +5,7 @@ from django.core.exceptions import ValidationError
 
 # App
 from account.models import User, Organization, Team
+from utils.form_utils import add_classes
 
 
 class UserCreationForm(forms.ModelForm):
@@ -24,7 +25,7 @@ class UserCreationForm(forms.ModelForm):
             "least 8 characters in length."
         )
         for visible in self.visible_fields():
-            visible.field.widget.attrs["class"] = "form-control"
+            add_classes(visible)
 
     class Meta:
         model = User
@@ -72,7 +73,7 @@ class UserLoginForm(AuthenticationForm):
     def __init__(self, *args, **kwargs):
         super(UserLoginForm, self).__init__(*args, **kwargs)
         for visible in self.visible_fields():
-            visible.field.widget.attrs["class"] = "form-control"
+            add_classes(visible)
 
 
 class OrganizationCreateForm(forms.ModelForm):
@@ -83,7 +84,7 @@ class OrganizationCreateForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(OrganizationCreateForm, self).__init__(*args, **kwargs)
         for visible in self.visible_fields():
-            visible.field.widget.attrs["class"] = "form-control"
+            add_classes(visible)
 
 
 class TeamCreateForm(forms.ModelForm):
@@ -101,4 +102,4 @@ class TeamCreateForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(TeamCreateForm, self).__init__(*args, **kwargs)
         for visible in self.visible_fields():
-            visible.field.widget.attrs["class"] = "form-control"
+            add_classes(visible)

@@ -61,7 +61,7 @@ def business_problem_detail(request, business_problem_id):
         BusinessProblem, pk=business_problem_id, organization=request.user.organization
     )
     assumptions = business_problem.assumption_set.all()
-    strategies = business_problem.strategy_set.all()
+    strategies = business_problem.strategy_set.all().order_by("-is_chosen", "summary")
     context = {
         "problem": business_problem,
         "assumptions": assumptions,
@@ -73,7 +73,7 @@ def business_problem_detail(request, business_problem_id):
 @logged_in_user
 @require_http_methods(["GET", "POST"])
 def business_problem_edit(request, business_problem_id):
-    business_problem = get_object_or_404(BusinessProblem, pk=business_problem_id)
+    business_problem = get_object_or_404(BusinessProblem, pk=business_problem_id, organization=request.user.organization)
     if request.method == "POST":
         form = BusinessProblemEditForm(request.POST, instance=business_problem, request=request)
         if form.is_valid():

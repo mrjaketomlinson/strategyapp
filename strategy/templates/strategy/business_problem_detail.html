@@ -65,28 +65,47 @@
   </div>
   {% for strategy in strategies %}
     <div class="card mb-2">
-      <div class="card-header">
-        <ul class="nav nav-tabs card-header-tabs">
+      <div class="card-header d-flex justify-content-between">
+        <ul class="nav nav-tabs card-header-tabs d-flex">
           <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="strategy-details-tab" data-bs-toggle="tab" data-bs-target="#strategy-details-tab-pane" type="button" role="tab" aria-controls="strategy-details-tab-pane" aria-selected="true">Details</button>
+            <button class="nav-link active" id="strategy-details-tab" data-bs-toggle="tab" data-bs-target="#strategy-details-tab-pane{{strategy.pk}}" type="button" role="tab" aria-controls="strategy-details-tab-pane{{strategy.pk}}" aria-selected="true">Details</button>
           </li>
           <li class="nav-item" role="presentation">
-            <button class="nav-link" id="strategy-projects-tab" data-bs-toggle="tab" data-bs-target="#strategy-projects-tab-pane" type="button" role="tab" aria-controls="strategy-projects-tab-pane" aria-selected="false">Projects</button>
+            <button class="nav-link" id="strategy-projects-tab" data-bs-toggle="tab" data-bs-target="#strategy-projects-tab-pane{{strategy.pk}}" type="button" role="tab" aria-controls="strategy-projects-tab-pane{{strategy.pk}}" aria-selected="false">Projects</button>
           </li>
         </ul>
+        <div class="d-flex">
+          <form class="strategy-choose-form" action="{% url 'strategy:strategy_choose' strategy_id=strategy.pk %}" method="post">
+            {% csrf_token %}
+            <button type="submit" class="btn p-0">
+              <span class="material-symbols-outlined primary-hover">
+                {% if strategy.is_chosen %}
+                  check_box
+                {% else %}
+                  check_box_outline_blank
+                {% endif %}
+              </span>
+            </button>
+          </form>
+        </div>
       </div>
       <div class="tab-content">
-        <div class="tab-pane fade show active" id="strategy-details-tab-pane" role="tabpanel" aria-labelledby="strategy-details-tab" tabindex="0">
+        <div class="tab-pane fade show active" id="strategy-details-tab-pane{{strategy.pk}}" role="tabpanel" aria-labelledby="strategy-details-tab" tabindex="0">
           <div class="card-body">
             <h5 class="card-title"><a href="{% url 'strategy:strategy_detail' strategy_id=strategy.pk %}">{{ strategy.summary }}</a></h5>
             <p class="card-text">{{ strategy.description }}</p>
             <!-- <a href="#" class="btn btn-primary">Go somewhere</a> -->
           </div>
         </div>
-        <div class="tab-pane fade" id="strategy-projects-tab-pane" role="tabpanel" aria-labelledby="strategy-projects-tab" tabindex="0">
+        <div class="tab-pane fade" id="strategy-projects-tab-pane{{strategy.pk}}" role="tabpanel" aria-labelledby="strategy-projects-tab" tabindex="0">
           <div class="card-body">
-            <h5 class="card-title">Coming soon...</h5>
-            <p class="card-text"></p>
+            <a href="{% url 'project:project_create' strategy_id=strategy.pk %}" class="btn btn-primary">New Project</a>
+            <hr>
+            {% for project in strategy.projects.all %}
+              <h5 class="card-title"><a href="{% url 'project:project_detail' project_id=project.pk %}">{{ project.summary }}</a></h5>
+              <p class="card-text">{{ project.description }}</p>
+              <hr>
+            {% endfor %}
             <!-- <a href="#" class="btn btn-primary">Go somewhere</a> -->
           </div>
         </div>
@@ -143,25 +162,24 @@
               }
             },
             error: function(jqXHR, textStatus, errorThrown) {
-              alert("Something went wrong. If the issue persists, please reach out to the Sapp team.");
+              alert("Something went wrong. If the issue persists, please reach out to the Bould team.");
             }
           });
         });
       },
       error: function (jqXHR, textStatus, errorThrown) {
-        alert("Something went wrong. If the issue persists, please reach out to the Sapp team.");
+        alert("Something went wrong. If the issue persists, please reach out to the Bould team.");
       }
     });
   }
   function deleteAssumption(event) {
     event.preventDefault();
     const form = $(this);
-    const actionUrl = form.attr('action');
-    const formData = form.serialize(); // Serialize the form data
-    var url = $(this).attr("action");
+    const actionUrl = form.attr("action");
+    const formData = form.serialize();
     $.ajax({
       type: 'POST',
-      url: url,
+      url: actionUrl,
       data: formData,
       success: function(response) {
         if (response.is_success) {
@@ -172,12 +190,39 @@
         }
       },
       error: function(jqXHR, textStatus, errorThrown) {
-        alert("Something went wrong. If the issue persists, please reach out to the Sapp team.");
+        alert("Something went wrong. If the issue persists, please reach out to the Bould team.");
+      }
+    });
+  }
+  function chooseStrategy(event) {
+    event.preventDefault();
+    const form = $(this);
+    const actionUrl = form.attr("action");
+    const formData = form.serialize();
+    $.ajax({
+      type: 'POST',
+      url: actionUrl,
+      data: formData,
+      success: function(response) {
+        if (response.is_success) {
+          if (response.is_chosen) {
+            form.find("span").text("check_box");
+          } else {
+            form.find("span").text("check_box_outline_blank");
+          }
+          // TODO: Add toast success
+        } else {
+          alert(response.msg);
+        }
+      },
+      error: function(jqXHR, textStatus, errorThrown) {
+        alert("Something went wrong. If the issue persists, please reach out to the Bould team.");
       }
     });
   }
   $(document).ready(function() {
     $(".assumption-del-form").on("submit", deleteAssumption);
+    $(".strategy-choose-form").on("submit", chooseStrategy);
   });
 </script>
 

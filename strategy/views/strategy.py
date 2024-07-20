@@ -122,3 +122,30 @@ def strategy_delete(request, strategy_id):
             e,
         )
     return redirect("strategy:business_problem_all")
+
+
+@logged_in_user
+@require_POST
+def strategy_choose(request, strategy_id):
+    is_success = True
+    msg = ""
+    strategy = None
+    try:
+        strategy = Strategy.objects.get(
+            pk=strategy_id, organization=request.user.organization
+        )
+        is_chosen = False if strategy.is_chosen else True
+        strategy.is_chosen = is_chosen
+        strategy.save()
+    except Strategy.DoesNotExist:
+        is_success = False
+        msg = "The strategy does not exist."
+    except Exception as e:
+        is_success = False
+        msg = "There was an issue updating this strategy."
+        # TODO: Proper logging
+        print(
+            f"strategy_choose Exception. user: {request.user}, strategy: {strategy_id}.",
+            e,
+        )
+    return JsonResponse({"is_chosen": is_chosen, "is_success": is_success, "msg": msg})
