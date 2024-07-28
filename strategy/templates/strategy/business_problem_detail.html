@@ -35,14 +35,14 @@
       <h2>Assumptions</h2>
       <div>
         <button id="assumption-add-btn" type="button" class="btn btn-primary" onclick="addAssumptionForm(this)" 
-          data-url="{% url 'strategy:assumption_create' related_obj='businessproblem' obj_id=problem.pk %}">Add</button>
+          data-url="{% url 'strategy:assumption_create' business_problem_id=problem.pk %}">Add</button>
       </div>
     </div>
     <div id="assumptionList">
       {% for assumption in assumptions %}
         <div id="assumption{{assumption.pk}}" class="d-flex assumption-item">
           <p class="me-1 assumption{{assumption.pk}}-summary">{{ assumption.summary }}</p>
-          <form class="assumption-del-form" action="{% url 'strategy:assumption_remove_relationship' assumption_id=assumption.pk related_obj='businessproblem' obj_id=problem.pk %}" method="post">
+          <form class="assumption-del-form" action="{% url 'strategy:assumption_delete' assumption_id=assumption.pk %}" method="post">
             {% csrf_token %}
             <button type="submit" class="btn p-0 m-0">
               <span class="material-symbols-outlined danger-hover">
@@ -119,7 +119,11 @@
   <p class="me-1"></p>
   <form class="assumption-del-form" action="" method="post">
     {% csrf_token %}
-    <button type="submit" class="btn btn-sm btn-danger">del</button>
+    <button type="submit" class="btn p-0 m-0">
+      <span class="material-symbols-outlined danger-hover">
+        delete
+      </span>
+    </button>
   </form>
 </div>
 

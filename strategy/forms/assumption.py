@@ -12,13 +12,15 @@ class AssumptionCreateForm(forms.ModelForm):
             "organization",
             "created_by",
             "modified_by",
+            "business_problem",
             "summary",
             # "description"
         ]
         widgets = {
             "organization": forms.HiddenInput(),
             "created_by": forms.HiddenInput(),
-            "modified_by": forms.HiddenInput()
+            "modified_by": forms.HiddenInput(),
+            "business_problem": forms.HiddenInput(),
         }
     
     def __init__(self, *args, **kwargs):
