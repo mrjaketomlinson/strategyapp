@@ -163,7 +163,17 @@ class TeamMember(models.Model):
 
 class Team(models.Model):
     create_date = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.DO_NOTHING,
+        related_name="team_created_by",
+    )
     modified_date = models.DateTimeField(auto_now=True)
+    modified_by = models.ForeignKey(
+        User,
+        on_delete=models.DO_NOTHING,
+        related_name="team_modified_by",
+    )
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
     members = models.ManyToManyField(User, through=TeamMember)
     name = models.CharField(max_length=255)

@@ -5,26 +5,134 @@
 {% block body %}
 
 <div class="container">
-  <h1>{{ team.name }}</h1>
+  <div class="d-flex justify-content-between">
+    <h1>{{ team.name }}</h1>
+    <a href="{% url 'account:team_edit' team_id=team.pk %}" class="btn primary-hover">
+      <span class="material-symbols-outlined">
+        edit
+      </span>
+    </a>
+  </div>
   <hr>
   <div class="d-flex justify-content-between">
     <h2>Members</h2>
     <div>
-      <button type="button" class="btn primary-hover">
+      <button type="button" data-url="{% url 'account:team_member_create' team_id=team.pk %}" onclick="addTeamMemberForm(this)" class="btn primary-hover">
         <span class="material-symbols-outlined">
-          edit
+          add
         </span>
       </button>
     </div>
   </div>
-  {% for user in team.members.all %}
-    <p>{{ user.get_full_name }}</p>
-  {% endfor %}
+  <div id="teamMemberList">
+    {% for member in members %}
+      <div id="team-member{{member.user.pk}}" class="d-flex team-member-item">
+        <p class="me-1 team-member{{member.user.pk}}-summary">{{ member.user.get_full_name }} - {{ member.role }}</p>
+        <form class="team-member-del-form" action="{% url 'account:team_member_delete' team_id=team.pk user_id=member.user.pk %}" method="post">
+          {% csrf_token %}
+          <button type="submit" class="btn p-0 m-0">
+            <span class="material-symbols-outlined danger-hover">
+              delete
+            </span>
+          </button>
+        </form>
+      </div>
+    {% endfor %}
+  </div>
+  
   <hr>
   <h2>Related business problems</h2>
   {% for problem in team.businessproblem_set.all %}
     <p><a href="{% url 'strategy:business_problem_detail' business_problem_id=problem.pk %}">{{ problem.summary }}</a></p>
   {% endfor %}
 </div>
+
+
+<div id="team-member-template" class="d-flex team-member-item d-none">
+  <p class="me-1"></p>
+  <form class="team-member-del-form" action="" method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn p-0 m-0">
+      <span class="material-symbols-outlined danger-hover">
+        delete
+      </span>
+    </button>
+  </form>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+
+<script type="text/javascript">
+  function addTeamMemberForm(identifier) {
+    var url = $(identifier).data("url");
+    $.ajax({
+      url: url,
+      data: {},
+      dataType: "json",
+      success: function (data) {
+        $("#teamMemberList").append(data.form);
+        var form = $('#teamMemberList').find('form').last();
+        form.submit(function(event) {
+          event.preventDefault();
+          var formData = $(this).serialize();
+          $.ajax({
+            type: 'POST',
+            url: url,
+            data: formData,
+            success: function(response) {
+              if (response.is_success) {
+                var teamMember = $("#team-member-template").clone();
+                teamMember.attr("id", `team-member${response.pk}`);
+                teamMember.find("form").attr("action", response.action);
+                teamMember.find("form").on("submit", deleteTeamMember);
+                teamMember.find("p").text(form.find("#id_user :selected").text());
+                teamMember.find("p").addClass(`team-member${response.pk}-summary`);
+                teamMember.removeClass("d-none");
+                form.parent("div").replaceWith(teamMember);
+                // TODO: Add toast success
+              } else {
+                // TODO: Proper error/message handling
+                alert(response.msg);
+              }
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+              alert("Something went wrong. If the issue persists, please reach out to the Bould team.");
+            }
+          });
+        });
+      },
+      error: function (jqXHR, textStatus, errorThrown) {
+        alert("Something went wrong. If the issue persists, please reach out to the Bould team.");
+      }
+    });
+  }
+  function deleteTeamMember(event) {
+    event.preventDefault();
+    const form = $(this);
+    const actionUrl = form.attr("action");
+    const formData = form.serialize();
+    $.ajax({
+      type: 'POST',
+      url: actionUrl,
+      data: formData,
+      success: function(response) {
+        if (response.is_success) {
+          form.closest(".team-member-item").remove();
+          // TODO: Add toast success
+        } else {
+          alert(response.msg);
+        }
+      },
+      error: function(jqXHR, textStatus, errorThrown) {
+        alert("Something went wrong. If the issue persists, please reach out to the Bould team.");
+      }
+    });
+  }
+  $(document).ready(function() {
+    $(".team-member-del-form").on("submit", deleteTeamMember);
+  });
+</script>
 
 {% endblock %}

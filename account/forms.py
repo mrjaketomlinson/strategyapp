@@ -2,9 +2,10 @@
 from django import forms
 from django.contrib.auth.forms import ReadOnlyPasswordHashField, AuthenticationForm
 from django.core.exceptions import ValidationError
+from django.forms import inlineformset_factory
 
 # App
-from account.models import User, Organization, Team
+from account.models import User, Organization, Team, TeamMember
 from utils.form_utils import add_classes
 
 
@@ -92,10 +93,13 @@ class TeamCreateForm(forms.ModelForm):
         model = Team
         fields = [
             "name",
-            "members",
+            "created_by",
+            "modified_by",
             "organization",
         ]
         widgets = {
+            "created_by": forms.HiddenInput(),
+            "modified_by": forms.HiddenInput(),
             "organization": forms.HiddenInput(),
         }
 
@@ -103,3 +107,43 @@ class TeamCreateForm(forms.ModelForm):
         super(TeamCreateForm, self).__init__(*args, **kwargs)
         for visible in self.visible_fields():
             add_classes(visible)
+
+
+class TeamEditForm(forms.ModelForm):
+    class Meta:
+        model = Team
+        fields = [
+            "name",
+            "modified_by",
+        ]
+        widgets = {
+            "modified_by": forms.HiddenInput(),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super(TeamEditForm, self).__init__(*args, **kwargs)
+        for visible in self.visible_fields():
+            add_classes(visible)
+
+
+class TeamMemberCreateForm(forms.ModelForm):
+    class Meta:
+        model = TeamMember
+        fields = ["user", "role", "team"]
+        widgets = {"team": forms.HiddenInput()}
+
+    def __init__(self, *args, **kwargs):
+        self.request = kwargs.pop("request", None)
+        super(TeamMemberCreateForm, self).__init__(*args, **kwargs)
+        if self.request:
+            self.fields["user"].queryset = User.objects.filter(
+                organization=self.request.user.organization
+            )
+        for visible in self.visible_fields():
+            add_classes(visible)
+
+        self.fields["user"].label_from_instance = self.user_label_from_instance
+
+    @staticmethod
+    def user_label_from_instance(obj):
+        return obj.get_full_name()
