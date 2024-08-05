@@ -117,7 +117,8 @@ def team_member_create(request, team_id):
     try:
         is_success = True
         msg = ""
-        action = ""
+        delete_action = ""
+        edit_action = ""
         team = Team.objects.get(pk=team_id, organization=request.user.organization)
     except Team.DoesNotExist:
         msg = "Something went wrong trying to create that team member with this specific team."
@@ -129,7 +130,8 @@ def team_member_create(request, team_id):
         json_response = {
             "is_success": is_success,
             "msg": msg,
-            "action": action,
+            "delete_action": delete_action,
+            "edit_action": edit_action
         }
         return JsonResponse(json_response)
     if request.method == "POST":
@@ -137,8 +139,12 @@ def team_member_create(request, team_id):
             form = TeamMemberCreateForm(request.POST, request=request)
             if form.is_valid():
                 team_member = form.save()
-                action = reverse(
+                delete_action = reverse(
                     "account:team_member_delete",
+                    kwargs={"team_id": team.pk, "user_id": team_member.user.pk},
+                )
+                edit_action = reverse(
+                    "account:team_member_edit",
                     kwargs={"team_id": team.pk, "user_id": team_member.user.pk},
                 )
             else:
@@ -157,7 +163,8 @@ def team_member_create(request, team_id):
         json_response = {
             "is_success": is_success,
             "msg": msg,
-            "action": action,
+            "delete_action": delete_action,
+            "edit_action": edit_action,
         }
         return JsonResponse(json_response)
     else:
@@ -180,8 +187,15 @@ def team_member_create(request, team_id):
                 request=request,
             )
         }
+        print(data["form"])
         return JsonResponse(data)
     
+
+@logged_in_user
+@require_http_methods(["GET", "POST"])
+def team_member_edit(request, team_id, user_id):
+    ...
+
 
 @logged_in_user
 @require_POST

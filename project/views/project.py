@@ -7,6 +7,7 @@ from django.views.decorators.http import require_GET, require_POST, require_http
 
 # App
 from account.decorators import logged_in_user
+from account.models import Team
 from project.forms import ProjectCreateForm, ProjectEditForm
 from project.models import Project
 from strategy.models import Strategy
@@ -48,6 +49,7 @@ def project_create(request, strategy_id):
             "created_by": request.user,
             "modified_by": request.user,
             "strategy": strategy,
+            "teams": Team.objects.filter(businessproblem__in=strategy.business_problems.all()).distinct()
         }
         form = ProjectCreateForm(initial=initial, request=request)
     context = {

@@ -25,40 +25,75 @@
     </div>
   </div>
   <div id="teamMemberList">
-    {% for member in members %}
-      <div id="team-member{{member.user.pk}}" class="d-flex team-member-item">
-        <p class="me-1 team-member{{member.user.pk}}-summary">{{ member.user.get_full_name }} - {{ member.role }}</p>
-        <form class="team-member-del-form" action="{% url 'account:team_member_delete' team_id=team.pk user_id=member.user.pk %}" method="post">
-          {% csrf_token %}
-          <button type="submit" class="btn p-0 m-0">
-            <span class="material-symbols-outlined danger-hover">
-              delete
-            </span>
-          </button>
-        </form>
-      </div>
-    {% endfor %}
+    <table id="teamMemberTable" class="table table-bordered">
+      <thead>
+        <tr>
+          <th scope="col">Name</th>
+          <th scope="col">Role</th>
+          <th scope="col">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for member in members %}
+          <tr class="team-member-item">
+            <td class="team-member-name">{{ member.user.get_full_name }}</td>
+            <td class="team-member-role">{{ member.role }}</td>
+            <td class="team-member-action d-flex">
+              {% comment %}
+              <!-- TODO: Team member edit button -->
+              <button type="button" class="btn m-0 p-0 primary-hover" data-url="{% url 'account:team_member_edit' team_id=team.pk user_id=member.user.pk %}" onclick="editTeamMemberForm(this)">
+                <span class="material-symbols-outlined">
+                  edit
+                </span>
+              </button>
+              {% endcomment %}
+              <form class="team-member-del-form" action="{% url 'account:team_member_delete' team_id=team.pk user_id=member.user.pk %}" method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn danger-hover p-0 m-0">
+                  <span class="material-symbols-outlined">
+                    delete
+                  </span>
+                </button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
-  
+
   <hr>
-  <h2>Related business problems</h2>
+  <div class="d-flex justify-content-between mb-2">
+    <h2 class="m-0">Related business problems</h2>
+    <a href="{% url 'strategy:business_problem_create' %}" class="btn primary-hover">
+      <span class="material-symbols-outlined">
+        add
+      </span>
+    </a>
+  </div>
   {% for problem in team.businessproblem_set.all %}
     <p><a href="{% url 'strategy:business_problem_detail' business_problem_id=problem.pk %}">{{ problem.summary }}</a></p>
   {% endfor %}
 </div>
 
-
-<div id="team-member-template" class="d-flex team-member-item d-none">
-  <p class="me-1"></p>
+<div id="team-member-template" class="d-none">
+  <button type="button" class="btn m-0 p-0 primary-hover team-member-edit-btn" data-url="" onclick="editTeamMemberForm(this)">
+    <span class="material-symbols-outlined">
+      edit
+    </span>
+  </button>
   <form class="team-member-del-form" action="" method="post">
     {% csrf_token %}
-    <button type="submit" class="btn p-0 m-0">
-      <span class="material-symbols-outlined danger-hover">
+    <button type="submit" class="btn danger-hover p-0 m-0">
+      <span class="material-symbols-outlined">
         delete
       </span>
     </button>
   </form>
 </div>
+
+
+
 
 {% endblock %}
 
@@ -83,6 +118,59 @@
             data: formData,
             success: function(response) {
               if (response.is_success) {
+                var tdName = $(`<td>${form.find("#id_user :selected").text()}</td>`);
+                var tdRole = $(`<td>${form.find("#id_role :selected").text()}</td>`);
+                var teamMemberTemplate = $("#team-member-template").clone();
+                var editBtn = teamMemberTemplate.find(".team-member-edit-btn").first();
+                editBtn.data("url", response.edit_action);
+                var deleteForm = teamMemberTemplate.find("form").first();
+                deleteForm.attr("action", response.delete_action);
+                deleteForm.on("submit", deleteTeamMember);
+                var tdActions = $("<td></td>")
+                tdActions.append(editBtn);
+                tdActions.append(deleteForm);
+                tdActions.addClass("d-flex");
+                var tr = $("<tr></tr>");
+                tr.append(tdName);
+                tr.append(tdRole);
+                tr.append(tdActions);
+                $("#teamMemberTable tbody").append(tr);
+                form.parent("div").remove();
+                // TODO: Add toast success
+              } else {
+                // TODO: Proper error/message handling
+                alert(response.msg);
+              }
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+              alert("Something went wrong. If the issue persists, please reach out to the Bould team.");
+            }
+          });
+        });
+      },
+      error: function (jqXHR, textStatus, errorThrown) {
+        alert("Something went wrong. If the issue persists, please reach out to the Bould team.");
+      }
+    });
+  }
+  function editTeamMemberForm(identifier) {
+    var url = $(identifier).data("url");
+    $.ajax({
+      url: url,
+      data: {},
+      dataType: "json",
+      success: function (data) {
+        $(`#team-member${data.user_id}`).text(data.form);
+        var form = $(`#team-member${data.user_id}`).find('form').last();
+        form.submit(function(event) {
+          event.preventDefault();
+          var formData = $(this).serialize();
+          $.ajax({
+            type: 'POST',
+            url: url,
+            data: formData,
+            success: function(response) {
+              if (response.is_success) {
                 var teamMember = $("#team-member-template").clone();
                 teamMember.attr("id", `team-member${response.pk}`);
                 teamMember.find("form").attr("action", response.action);
@@ -90,7 +178,7 @@
                 teamMember.find("p").text(form.find("#id_user :selected").text());
                 teamMember.find("p").addClass(`team-member${response.pk}-summary`);
                 teamMember.removeClass("d-none");
-                form.parent("div").replaceWith(teamMember);
+                $(`#team-member${data.user_id}`).replaceWith(teamMember);
                 // TODO: Add toast success
               } else {
                 // TODO: Proper error/message handling

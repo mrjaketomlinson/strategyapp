@@ -1,0 +1,21 @@
+<tr>
+  {% if error %}
+    <div class="" role="alert">
+      {{ error }}
+    </div>
+  {% endif %}
+  <form method="POST" action="{{ url }}" id="{{ form_id }}" class="">
+    {% csrf_token %}
+    {% for field in form.visible_fields %}
+      <td>
+        {{ field }}
+      </td>
+    {% endfor %}
+    <td>
+      <button class="btn btn-primary" role="button" type="submit">{{ button }}</button>
+    </td>
+    {% for field in form.hidden_fields %}
+      <div style="display:none;">{{ field }}</div>
+    {% endfor %}
+  </form>
+</tr>
