@@ -36,11 +36,6 @@
       {% if request.user.is_authenticated %}
         <div class="collapse navbar-collapse" id="navContents">
           <div class="navbar-nav me-auto">
-            <a class="nav-link" data-bs-toggle="tooltip" data-bs-title="Teams" data-bs-placement="bottom" href="{% url 'account:team_all' %}">
-              <span class="material-symbols-outlined">
-                group
-              </span>
-            </a>
             <a class="nav-link" data-bs-toggle="tooltip" data-bs-title="Business Problems" data-bs-placement="bottom" href="{% url 'strategy:business_problem_all' %}">
               <span class="material-symbols-outlined">
                 problem
@@ -52,10 +47,19 @@
               </span>
             </a>
           </div>
-          <div class="d-flex pb-3">
+          <div class="navbar-nav">
+            <a class="nav-link" data-bs-toggle="tooltip" data-bs-title="Admin" data-bs-placement="bottom" href="{% url 'account:admin' %}">
+              <span class="material-symbols-outlined">
+                account_circle
+              </span>
+            </a>
             <form id="logout-form" method="post" action="{% url 'logout' %}">
               {% csrf_token %}
-              <button type="submit" class="btn btn-link nav-link">Logout</button>
+              <button type="submit" class="btn btn-link nav-link" data-bs-toggle="tooltip" data-bs-title="Logout" data-bs-placement="bottom">
+                <span class="material-symbols-outlined">
+                  logout
+                </span>
+              </button>
             </form>
           </div>
         </div>
@@ -91,6 +95,37 @@
     </div>
   </div>
 
+  <!-- Modal -->
+  <div class="modal fade" id="modal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered modal-xl modal-fullscreen-lg-down">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 id="modal-title" class="modal-title"></h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div id="modal-body" class="modal-body">
+        </div>
+        <div id="modal-footer" class="modal-footer d-none">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Breadcrumbs -->
+   {% if breadcrumbs %}
+    <nav class="container" aria-label="breadcrumb">
+      <ol class="breadcrumb">
+        {% for crumb in breadcrumbs %}
+          {% if forloop.last %}
+            <li class="breadcrumb-item active" aria-current="page">{{ crumb.title }}</li>
+          {% else %}
+            <li class="breadcrumb-item"><a href="{{ crumb.url }}">{{ crumb.title }}</a></li>
+          {% endif %}
+        {% endfor %}
+      </ol>
+    </nav>
+   {% endif %}
+
   <main>
     {% block body %}{% endblock %}
   </main>
@@ -117,6 +152,13 @@
     // Initialize bootstrap tooltips
     const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
     const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+    const modal = document.getElementById('modal');
+    modal.addEventListener('hide.bs.modal', event => {
+      $("#modal-title").html("");
+      $("#modal-body").html("");
+      $("#modal-footer").html("");
+      $("#modal-footer").addClass("d-none");
+    });
   });
 </script>
 </html>

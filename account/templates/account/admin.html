@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin{% endblock %}
+
+{% block head %}
+
+<style>
+  .list-group a {
+    text-decoration: none;
+  }
+  .list-group a:hover {
+    text-decoration: underline;
+  }
+</style>
+
+{% endblock %}
+
+{% block body %}
+
+<div class="container">
+  <h1>Admin</h1>
+  <ul class="list-group">
+    <li class="list-group-item d-flex justify-content-between align-items-center">
+      <div class="d-flex align-items-center">
+        <span class="material-symbols-outlined me-2">person</span>
+        <a href="{% url 'account:user_all' %}" class="link-dark">Users</a>
+      </div>
+      <span class="badge text-bg-primary rounded-pill">{{ user_count }}</span>
+    </li>
+    <li class="list-group-item d-flex justify-content-between align-items-center">
+      <div class="d-flex align-items-center">
+        <span class="material-symbols-outlined me-2">groups</span>
+        <a href="{% url 'account:team_all' %}" class="link-dark">Teams</a>
+      </div>
+      <span class="badge text-bg-primary rounded-pill">{{ team_count }}</span>
+    </li>
+    <li class="list-group-item d-flex justify-content-between align-items-center">
+      <div class="d-flex align-items-center">
+        <span class="material-symbols-outlined me-2">schedule</span>
+        <a href="{% url 'account:time_period_all' %}" class="link-dark">Time periods</a>
+      </div>
+    </li>
+  </ul>
+</div>
+
+{% endblock %}

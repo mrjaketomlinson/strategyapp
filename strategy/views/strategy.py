@@ -17,7 +17,7 @@ from strategy.models import BusinessProblem, Strategy, Assumption
 @require_http_methods(["GET", "POST"])
 def strategy_create(request):
     if request.method == "POST":
-        form = StrategyCreateForm(request.POST)
+        form = StrategyCreateForm(request.POST, request=request)
         if form.is_valid():
             problem = get_object_or_404(
                 BusinessProblem,
@@ -49,7 +49,7 @@ def strategy_create(request):
             "modified_by": request.user,
             "problem": problem.pk,
         }
-        form = StrategyCreateForm(initial=initial)
+        form = StrategyCreateForm(initial=initial, request=request)
         context = {
             "form": form,
             "url": reverse("strategy:strategy_create"),
@@ -69,12 +69,14 @@ def strategy_detail(request, strategy_id):
     return render(request, "strategy/strategy_detail.html", context)
 
 
+@logged_in_user
+@require_http_methods(["GET", "POST"])
 def strategy_edit(request, strategy_id):
     strategy = get_object_or_404(
         Strategy, pk=strategy_id, organization=request.user.organization
     )
     if request.method == "POST":
-        form = StrategyEditForm(request.POST, instance=strategy)
+        form = StrategyEditForm(request.POST, instance=strategy, request=request)
         if form.is_valid():
             strategy = form.save()
             messages.success(request, "Update successful!")
@@ -87,7 +89,7 @@ def strategy_edit(request, strategy_id):
             return HttpResponseRedirect(request.META.get("HTTP_REFERER"))
     else:
         initial = {"modified_by": request.user}
-        form = StrategyEditForm(instance=strategy, initial=initial)
+        form = StrategyEditForm(instance=strategy, initial=initial, request=request)
         context = {
             "form": form,
             "form_id": "strategy-edit-form",
@@ -149,3 +151,32 @@ def strategy_choose(request, strategy_id):
             e,
         )
     return JsonResponse({"is_chosen": is_chosen, "is_success": is_success, "msg": msg})
+
+
+@logged_in_user
+@require_GET
+def strategy_preview(request, strategy_id):
+    is_success = True
+    msg = ""
+    title = ""
+    body = ""
+    footer = None
+    try:
+        strategy = Strategy.objects.get(
+            pk=strategy_id, organization=request.user.organization
+        )
+        title = strategy.summary
+        body = render_to_string("strategy/strategy_preview.html", {"strategy": strategy})
+        footer = f'<a class="btn btn-primary" href="{reverse("strategy:strategy_detail", kwargs={"strategy_id": strategy.pk})}">View</a>'
+    except Strategy.DoesNotExist:
+        is_success = False
+        msg = "The strategy does not exist."
+    except Exception as e:
+        is_success = False
+        msg = "There was an issue getting this strategy."
+        # TODO: Proper logging
+        print(
+            f"strategy_preview Exception. user: {request.user}, strategy: {strategy_id}.",
+            e,
+        )
+    return JsonResponse({"is_success": is_success, "msg": msg, "title": title, "body": body, "footer": footer})

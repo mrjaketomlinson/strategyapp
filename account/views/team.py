@@ -16,7 +16,13 @@ from account.models import Team, TeamMember
 @require_GET
 def team_all(request):
     teams = Team.objects.filter(organization=request.user.organization)
-    context = {"teams": teams}
+    context = {
+        "teams": teams,
+        "breadcrumbs": [
+            {"title": "Admin", "url": reverse("account:admin")},
+            {"title": "Teams", "url": reverse("account:team_all")},
+        ],
+    }
     return render(request, "account/team_all.html", context)
 
 
@@ -131,7 +137,7 @@ def team_member_create(request, team_id):
             "is_success": is_success,
             "msg": msg,
             "delete_action": delete_action,
-            "edit_action": edit_action
+            "edit_action": edit_action,
         }
         return JsonResponse(json_response)
     if request.method == "POST":
@@ -189,12 +195,11 @@ def team_member_create(request, team_id):
         }
         print(data["form"])
         return JsonResponse(data)
-    
+
 
 @logged_in_user
 @require_http_methods(["GET", "POST"])
-def team_member_edit(request, team_id, user_id):
-    ...
+def team_member_edit(request, team_id, user_id): ...
 
 
 @logged_in_user
@@ -215,4 +220,3 @@ def team_member_delete(request, team_id, user_id):
             e,
         )
     return JsonResponse({"is_success": is_success, "msg": msg})
-    

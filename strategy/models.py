@@ -3,7 +3,7 @@ from django.db import models
 
 # App
 from strategyapp import settings
-from account.models import Organization, Team
+from account.models import Organization, Team, TimePeriod
 
 
 class BusinessProblem(models.Model):
@@ -29,6 +29,9 @@ class BusinessProblem(models.Model):
         choices=(("Problem", "Problem"), ("Opportunity", "Opportunity")),
         default="Problem",
     )
+    time_period = models.ForeignKey(
+        TimePeriod, on_delete=models.SET_NULL, null=True, blank=True
+    )
 
 
 class Strategy(models.Model):
@@ -49,6 +52,9 @@ class Strategy(models.Model):
     description = models.TextField(blank=True)
     business_problems = models.ManyToManyField(BusinessProblem)
     is_chosen = models.BooleanField(default=False)
+    time_period = models.ForeignKey(
+        TimePeriod, on_delete=models.SET_NULL, null=True, blank=True
+    )
     # Voting mechanism
 
 

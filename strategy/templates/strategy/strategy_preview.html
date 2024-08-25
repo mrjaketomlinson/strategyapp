@@ -1,0 +1,9 @@
+{{strategy.description}}
+
+<hr>
+<h5>Projects</h5>
+<ul>
+  {% for project in strategy.projects.all %}
+    <li><a href="{% url 'project:project_detail' project_id=project.pk %}">{{project.summary}}</a></li>
+  {% endfor %}
+</ul>

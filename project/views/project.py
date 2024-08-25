@@ -1,7 +1,8 @@
 # Django
 from django.contrib import messages
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
+from django.template.loader import render_to_string
 from django.urls import reverse
 from django.views.decorators.http import require_GET, require_POST, require_http_methods
 
@@ -122,3 +123,32 @@ def project_delete(request, project_id):
             e,
         )
     return redirect("project:project_all")
+
+
+@logged_in_user
+@require_GET
+def project_preview(request, project_id):
+    is_success = True
+    msg = ""
+    title = ""
+    body = ""
+    footer = None
+    try:
+        project = Project.objects.get(
+            pk=project_id, organization=request.user.organization
+        )
+        title = project.summary
+        body = render_to_string("project/project_preview.html", {"project": project})
+        footer = f'<a class="btn btn-primary" href="{reverse("project:project_detail", kwargs={"project_id": project.pk})}">View</a>'
+    except Project.DoesNotExist:
+        is_success = False
+        msg = "The project does not exist."
+    except Exception as e:
+        is_success = False
+        msg = "There was an issue getting this project."
+        # TODO: Proper logging
+        print(
+            f"project_preview Exception. user: {request.user}, project: {project_id}.",
+            e,
+        )
+    return JsonResponse({"is_success": is_success, "msg": msg, "title": title, "body": body, "footer": footer})

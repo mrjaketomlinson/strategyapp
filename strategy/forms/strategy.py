@@ -2,6 +2,7 @@
 from django import forms
 
 # App
+from account.models import TimePeriod
 from strategy.models import Strategy
 from utils.form_utils import add_classes
 
@@ -15,6 +16,7 @@ class StrategyCreateForm(forms.ModelForm):
             "organization",
             "created_by",
             "modified_by",
+            "time_period",
             "summary",
             "description",
         ]
@@ -25,7 +27,12 @@ class StrategyCreateForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
+        self.request = kwargs.pop("request", None)
         super(StrategyCreateForm, self).__init__(*args, **kwargs)
+        if self.request:
+            self.fields["time_period"].queryset = TimePeriod.objects.filter(
+                organization=self.request.user.organization
+            )
         for visible in self.visible_fields():
             add_classes(visible)
 
@@ -35,6 +42,7 @@ class StrategyEditForm(forms.ModelForm):
         model = Strategy
         fields = [
             "modified_by",
+            "time_period",
             "summary",
             "description",
         ]
@@ -43,6 +51,11 @@ class StrategyEditForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
+        self.request = kwargs.pop("request", None)
         super(StrategyEditForm, self).__init__(*args, **kwargs)
+        if self.request:
+            self.fields["time_period"].queryset = TimePeriod.objects.filter(
+                organization=self.request.user.organization
+            )
         for visible in self.visible_fields():
             add_classes(visible)

@@ -13,6 +13,7 @@ from account.forms import (
     UserLoginForm,
     OrganizationCreateForm,
 )
+from account.models import User, Team
 
 
 @authenticated_user
@@ -72,3 +73,29 @@ def organization_create(request):
 class UserLogin(LoginView):
     authentication_form = UserLoginForm
     # template_name = "registration"
+
+
+@logged_in_user
+@require_GET
+def admin(request):
+    user_count = User.objects.filter(organization=request.user.organization).count()
+    team_count = Team.objects.filter(organization=request.user.organization).count()
+    context = {
+        "user_count": user_count,
+        "team_count": team_count
+    }
+    return render(request, "account/admin.html", context)
+
+
+@logged_in_user
+@require_GET
+def user_all(request):
+    users = User.objects.filter(organization=request.user.organization)
+    context = {
+        "users": users,
+        "breadcrumbs": [
+            {"title": "Admin", "url": reverse("account:admin")},
+            {"title": "Users", "url": reverse("account:user_all")}
+        ]
+    }
+    return render(request, "account/user_all.html", context)

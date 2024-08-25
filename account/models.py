@@ -180,3 +180,25 @@ class Team(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class TimePeriod(models.Model):
+    create_date = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.DO_NOTHING,
+        related_name="timeperiod_created_by",
+    )
+    modified_date = models.DateTimeField(auto_now=True)
+    modified_by = models.ForeignKey(
+        User,
+        on_delete=models.DO_NOTHING,
+        related_name="timeperiod_modified_by",
+    )
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
+    name = models.CharField(max_length=255)
+    start_date = models.DateField()
+    end_date = models.DateField()
+
+    def __str__(self):
+        return f"{self.name} ({self.start_date} - {self.end_date})"

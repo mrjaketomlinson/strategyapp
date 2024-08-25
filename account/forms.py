@@ -5,8 +5,9 @@ from django.core.exceptions import ValidationError
 from django.forms import inlineformset_factory
 
 # App
-from account.models import User, Organization, Team, TeamMember
+from account.models import User, Organization, Team, TeamMember, TimePeriod
 from utils.form_utils import add_classes
+from utils.widgets import DateInput
 
 
 class UserCreationForm(forms.ModelForm):
@@ -147,3 +148,49 @@ class TeamMemberCreateForm(forms.ModelForm):
     @staticmethod
     def user_label_from_instance(obj):
         return obj.get_full_name()
+
+
+class TimePeriodCreateForm(forms.ModelForm):
+    class Meta:
+        model = TimePeriod
+        fields = [
+            "organization",
+            "created_by",
+            "modified_by",
+            "name",
+            "start_date",
+            "end_date",
+        ]
+        widgets = {
+            "organization": forms.HiddenInput(),
+            "created_by": forms.HiddenInput(),
+            "modified_by": forms.HiddenInput(),
+            "start_date": DateInput(),
+            "end_date": DateInput(),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super(TimePeriodCreateForm, self).__init__(*args, **kwargs)
+        for visible in self.visible_fields():
+            add_classes(visible)
+
+
+class TimePeriodEditForm(forms.ModelForm):
+    class Meta:
+        model = TimePeriod
+        fields = [
+            "modified_by",
+            "name",
+            "start_date",
+            "end_date",
+        ]
+        widgets = {
+            "modified_by": forms.HiddenInput(),
+            "start_date": DateInput(),
+            "end_date": DateInput(),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super(TimePeriodEditForm, self).__init__(*args, **kwargs)
+        for visible in self.visible_fields():
+            add_classes(visible)

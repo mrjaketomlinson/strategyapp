@@ -2,7 +2,7 @@
 from django import forms
 
 # App
-from account.models import Team
+from account.models import Team, TimePeriod
 from strategy.models import BusinessProblem
 from utils.form_utils import add_classes
 
@@ -16,8 +16,9 @@ class BusinessProblemCreateForm(forms.ModelForm):
             "modified_by",
             "is_public",
             "category",
-            "summary",
             "teams",
+            "time_period",
+            "summary",
             "description",
         ]
         widgets = {
@@ -33,6 +34,9 @@ class BusinessProblemCreateForm(forms.ModelForm):
             self.fields["teams"].queryset = Team.objects.filter(
                 organization=self.request.user.organization
             )
+            self.fields["time_period"].queryset = TimePeriod.objects.filter(
+                organization=self.request.user.organization
+            )
         for visible in self.visible_fields():
             add_classes(visible)
 
@@ -42,10 +46,11 @@ class BusinessProblemEditForm(forms.ModelForm):
         model = BusinessProblem
         fields = [
             "modified_by",
-            "summary",
             "is_public",
             "category",
             "teams",
+            "time_period",
+            "summary",
             "description",
         ]
         widgets = {"modified_by": forms.HiddenInput()}
@@ -55,6 +60,9 @@ class BusinessProblemEditForm(forms.ModelForm):
         super(BusinessProblemEditForm, self).__init__(*args, **kwargs)
         if self.request:
             self.fields["teams"].queryset = Team.objects.filter(
+                organization=self.request.user.organization
+            )
+            self.fields["time_period"].queryset = TimePeriod.objects.filter(
                 organization=self.request.user.organization
             )
         for visible in self.visible_fields():

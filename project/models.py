@@ -2,7 +2,7 @@
 from django.db import models
 
 # App
-from account.models import Organization, Team
+from account.models import Organization, Team, TimePeriod
 from strategy.models import Strategy
 from strategyapp import settings
 
@@ -29,6 +29,9 @@ class Project(models.Model):
         on_delete=models.CASCADE,
         related_name="projects",
         related_query_name="project",
+    )
+    time_period = models.ForeignKey(
+        TimePeriod, on_delete=models.SET_NULL, null=True, blank=True
     )
 
 

@@ -2,6 +2,21 @@
 
 {% block title %}Strategy{% endblock %}
 
+{% block head %}
+<style>
+  .quick-view-btn {
+    opacity: 0;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    transition: opacity 0.3s ease;
+  }
+  .card:hover .quick-view-btn {
+    opacity: 1;
+  }
+</style>
+{% endblock %}
+
 {% block body %}
 
 <div class="container">
@@ -27,12 +42,13 @@
       <h1>{{ strategy.summary }}</h1>
     </div>
   </div>
-  <p>{{ strategy.description }}</p>
-
+  {% if strategy.time_period %}
+    <i>Time period: {{ strategy.time_period }}</i><br>
+  {% endif %}
   <hr>
-
+  <!-- Busines problems -->
   <div class="d-flex justify-content-between">
-    <h2>Related business problems</h2>
+    <h5>Related business problems</h5>
     {% comment %}
     <!-- TODO: Add association button -->
     <div>
@@ -40,10 +56,72 @@
     </div>
     {% endcomment %}
   </div>
-  {% for problem in strategy.business_problems.all %}
-    <p><a href="{% url 'strategy:business_problem_detail' business_problem_id=problem.pk %}">{{ problem.summary }}</a></p>
-  {% endfor %}
+  <ul>
+    {% for problem in strategy.business_problems.all %}
+      <li><a href="{% url 'strategy:business_problem_detail' business_problem_id=problem.pk %}">{{ problem.summary }}</a></li>
+    {% endfor %}
+  </ul>
+
+  <!-- Details -->
+  <h5 class="mt-4">Strategy Description</h5>
+  <p>{{ strategy.description }}</p>
+
+  <!-- Projects -->
+  <div class="justify-content-between d-flex">
+    <h5 class="mt-4">Projects</h5>
+    <a class="btn primary-hover mb-2 me-2" href="{% url 'project:project_create' strategy_id=strategy.pk %}">
+      <span class="material-symbols-outlined">
+        add
+      </span>
+    </a>
+  </div>
+  <div class="row row-cols-md-2" data-masonry='{"percentPosition": true }'>
+    {% for project in strategy.projects.all %}
+    <div class="col mb-4">
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title">
+            <a href="{% url 'project:project_detail' project_id=project.pk %}">{{ project.summary }}</a>
+            <button class="btn quick-view-btn" data-bs-toggle="modal" data-bs-target="#modal" onclick="previewProject(this)" data-url="{% url 'project:project_preview' project_id=project.pk %}">
+              <span class="material-symbols-outlined">
+                preview
+              </span>
+            </button>
+          </h5>
+          <p class="card-text">{{ project.description }}</p>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
 </div>
 
+
+{% endblock %}
+
+{% block scripts %}
+
+<script type="text/javascript">
+  function previewProject(identifier) {
+    $.ajax({
+      url: $(identifier).data("url"),
+      data: {},
+      dataType: "json",
+      success: function (data) {
+        $("#modal-title").html(data.title);
+        $("#modal-body").html(data.body);
+        if (data.footer) {
+          $("#modal-footer").html(data.footer);
+          $("#modal-footer").removeClass("d-none")
+        }
+      },
+      error: function (jqXHR, textStatus, errorThrown) {
+        alert("Something went wrong. If the issue persists, please reach out to the Bould team.");
+      }
+    });
+  }
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/masonry-layout@4.2.2/dist/masonry.pkgd.min.js" integrity="sha384-GNFwBvfVxBkLMJpYMOABq3c+d3KnQxudP/mGPkzpZSTYykLBNsZEnG2D9G/X/+7D" crossorigin="anonymous" async></script>
 
 {% endblock %}

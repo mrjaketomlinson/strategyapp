@@ -16,4 +16,5 @@ urlpatterns = [
     path("strategy/<int:strategy_id>/edit/", views.strategy_edit, name="strategy_edit"),
     path("strategy/<int:strategy_id>/delete/", views.strategy_delete, name="strategy_delete"),
     path("strategy/<int:strategy_id>/choose/", views.strategy_choose, name="strategy_choose"),
+    path("strategy/<int:strategy_id>/preview/", views.strategy_preview, name="strategy_preview"),
 ]
