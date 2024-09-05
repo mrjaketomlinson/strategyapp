@@ -3,6 +3,9 @@ from django.urls import path
 from strategy import views
 
 urlpatterns = [
+    path("accounts/criterion/all/", views.criterion_all, name="criterion_all"),
+    path("accounts/criterion/create/", views.criterion_create, name="criterion_create"),
+    path("accounts/criterion/<int:criterion_id>/edit/", views.criterion_edit, name="criterion_edit"),
     path("problem/all/", views.business_problem_all, name="business_problem_all"),
     path("problem/create/", views.business_problem_create, name="business_problem_create"),
     path("problem/<int:business_problem_id>/", views.business_problem_detail, name="business_problem_detail"),

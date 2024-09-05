@@ -1,41 +1,39 @@
 {% extends "base.html" %}
 
-{% block title %}Time Periods{% endblock %}
+{% block title %}Criteria{% endblock %}
 
 {% block body %}
 
 <div class="container">
-  <h1>Time Periods</h1>
+  <h1>Criteria</h1>
   <div class="d-flex">
     <div class="flex-fill p-1">
       <input class="form-control" type="text" id="searchInput" onkeyup="searchTable()"
         placeholder="Search...">
     </div>
     <div class="p-1">
-      <button type="button" id="createTimePeriodBtn" class="btn" data-bs-toggle="modal" data-bs-target="#modal" onclick="createTimePeriod(this)" data-url="{% url 'account:time_period_create' %}">
+      <button type="button" id="createCriteriaBtn" class="btn" data-bs-toggle="modal" data-bs-target="#modal" onclick="createCriterion(this)" data-url="{% url 'strategy:criterion_create' %}">
         <span class="material-symbols-outlined">
           add
         </span>
       </button>
     </div>
   </div>
-  <table id="timePeriodTable" class="table table-hover table-responsive">
+  <table id="criterionTable" class="table table-hover table-responsive">
     <thead>
       <tr>
         <th>Name</th>
-        <th>Start Date</th>
-        <th>End Date</th>
+        <th>Type</th>
       </tr>
     </thead>
-    {% for period in time_periods %}
+    {% for criterion in criteria %}
       <tr>
         <td>
-          <button type="button" id="editTimePeriodBtn" class="btn btn-link p-0" data-bs-toggle="modal" data-bs-target="#modal" onclick="editTimePeriod(this)" data-url="{% url 'account:time_period_edit' time_period_id=period.pk %}">
-            {{ period.name }}
+          <button type="button" id="editCriteriaBtn" class="btn btn-link p-0" data-bs-toggle="modal" data-bs-target="#modal" onclick="editCriterion(this)" data-url="{% url 'strategy:criterion_edit' criterion_id=criterion.pk %}">
+            {{ criterion.name }}
           </button>
         </td>
-        <td>{{ period.start_date }}</td>
-        <td>{{ period.end_date }}</td>
+        <td>{{ criterion.get_criterion_type_display }}</td>
       </tr>
     {% endfor %}
   </table>
@@ -46,7 +44,7 @@
 {% block scripts %}
 
 <script type="text/javascript">
-  function createTimePeriod(identifier) {
+  function createCriterion(identifier) {
     $.ajax({
       url: $(identifier).data("url"),
       data: {},
@@ -64,7 +62,7 @@
       }
     });
   }
-  function editTimePeriod(identifier) {
+  function editCriterion(identifier) {
     $.ajax({
       url: $(identifier).data("url"),
       data: {},

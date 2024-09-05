@@ -8,95 +8,94 @@ from django.views.decorators.http import require_GET, require_POST, require_http
 
 # App
 from account.decorators import logged_in_user
-from account.models import Team
-from account.forms import *
-from account.models import TimePeriod
+from strategy.forms import CriterionCreateForm, CriterionEditForm
+from strategy.models import Criterion
 
 
 @logged_in_user
 @require_GET
-def time_period_all(request):
-    time_periods = TimePeriod.objects.filter(
+def criterion_all(request):
+    criteria = Criterion.objects.filter(
         organization=request.user.organization
-    ).order_by("start_date")
+    ).order_by("name")
     context = {
-        "time_periods": time_periods,
+        "criteria": criteria,
         "breadcrumbs": [
             {"title": "Admin", "url": reverse("account:admin")},
-            {"title": "Periods", "url": reverse("account:time_period_all")},
+            {"title": "Criteria", "url": reverse("strategy:criterion_all")},
         ],
     }
-    return render(request, "account/time_period_all.html", context)
+    return render(request, "strategy/criterion_all.html", context)
 
 
 @logged_in_user
 @require_http_methods(["GET", "POST"])
-def time_period_create(request):
+def criterion_create(request):
     if request.method == "POST":
-        form = TimePeriodCreateForm(request.POST)
+        form = CriterionCreateForm(request.POST)
         if form.is_valid():
-            time_period = form.save()
-            messages.success(request, "Time period created successfully!")
+            criterion = form.save()
+            messages.success(request, "Criterion created successfully!")
         else:
             for err, message in form.errors.items():
                 messages.error(
                     request, f'Field: {err}. Message: {"; ".join(m for m in message)}'
                 )
-        return redirect("account:time_period_all")
+        return redirect("strategy:criterion_all")
     else:
         initial = {
             "organization": request.user.organization,
             "created_by": request.user,
             "modified_by": request.user,
         }
-        form = TimePeriodCreateForm(initial=initial)
+        form = CriterionCreateForm(initial=initial)
         context = {
             "body": render_to_string(
                 "base_form.html",
                 {
                     "form": form,
-                    "url": reverse("account:time_period_create"),
-                    "form_id": "time-period-create-form",
+                    "url": reverse("strategy:criterion_create"),
+                    "form_id": "criterion-create-form",
                     "button": "Create",
                 },
                 request=request,
             ),
-            "title": "Create new time period",
+            "title": "Create new criterion",
         }
         return JsonResponse(context)
 
 
 @logged_in_user
 @require_http_methods(["GET", "POST"])
-def time_period_edit(request, time_period_id):
-    time_period = get_object_or_404(
-        TimePeriod, pk=time_period_id, organization=request.user.organization
+def criterion_edit(request, criterion_id):
+    criterion = get_object_or_404(
+        Criterion, pk=criterion_id, organization=request.user.organization
     )
     if request.method == "POST":
-        form = TimePeriodEditForm(request.POST, instance=time_period)
+        form = CriterionEditForm(request.POST, instance=criterion)
         if form.is_valid():
-            time_period = form.save()
+            criterion = form.save()
             messages.success(request, "Update successful!")
         else:
             for err, message in form.errors.items():
                 messages.error(
                     request, f'Field: {err}. Message: {"; ".join(m for m in message)}'
                 )
-        return redirect("account:time_period_all")
+        return redirect("strategy:criterion_all")
     else:
         initial = {"modified_by": request.user}
-        form = TimePeriodEditForm(instance=time_period, initial=initial)
+        form = CriterionEditForm(instance=criterion, initial=initial)
         context = {
             "body": render_to_string(
                 "base_form.html",
                 {
                     "form": form,
-                    "url": reverse("account:time_period_edit", kwargs={"time_period_id": time_period_id}),
-                    "form_id": "time-period-edit-form",
+                    "url": reverse("strategy:criterion_edit", kwargs={"criterion_id": criterion_id}),
+                    "form_id": "criterion-edit-form",
                     "button": "Update",
                 },
                 request=request,
             ),
-            "title": "Update time period",
+            "title": "Update criterion",
         }
         return JsonResponse(context)
