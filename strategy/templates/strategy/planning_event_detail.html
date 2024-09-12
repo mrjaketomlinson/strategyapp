@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Planning Event{% endblock %}
+
+{% block body %}
+
+<div class="container">
+  <div class="row">
+    <div class="col-12 col-md-2 order-md-2 d-flex justify-content-end">
+      <div>
+        <a class="btn me-2" href="{% url 'strategy:planning_event_edit' planning_event_id=event.pk %}">
+          <span class="material-symbols-outlined primary-hover">
+            edit
+          </span>
+        </a>
+      </div>
+      <form action="{% url 'strategy:planning_event_delete' planning_event_id=event.pk %}" method="POST">
+        {% csrf_token %}
+        <button type="submit" class="btn">
+          <span class="material-symbols-outlined danger-hover">
+            delete
+          </span>
+        </button>
+      </form>
+    </div>
+    <div class="col-12 col-md-10 order-md-1">
+      <h1>{{ event.name }}</h1>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

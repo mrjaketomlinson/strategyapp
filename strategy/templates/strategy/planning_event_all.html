@@ -12,11 +12,11 @@
         placeholder="Search...">
     </div>
     <div class="p-1">
-      <button type="button" id="createPlanningEventBtn" class="btn" data-bs-toggle="modal" data-bs-target="#modal" onclick="createPlanningEvent(this)" data-url="{% url 'strategy:planning_event_create' %}">
+      <a id="createBusinessProblemBtn" class="btn" href="{% url 'strategy:planning_event_create' %}">
         <span class="material-symbols-outlined">
           add
         </span>
-      </button>
+      </a>
     </div>
   </div>
   <table id="planningEventTable" class="table table-hover table-responsive">
@@ -29,57 +29,14 @@
     {% for event in planning_events %}
       <tr>
         <td>
-          <button type="button" id="editPlanningEventBtn" class="btn btn-link p-0" data-bs-toggle="modal" data-bs-target="#modal" onclick="editPlanningEvent(this)" data-url="{% url 'strategy:planning_event_edit' planning_event_id=event.pk %}">
+          <a href="{% url 'strategy:planning_event_detail' planning_event_id=event.pk %}">
             {{ event.name }}
-          </button>
+          </a>
         </td>
         <td>{{ event.time_period.name }}</td>
       </tr>
     {% endfor %}
   </table>
 </div>
-
-{% endblock %}
-
-{% block scripts %}
-
-<script type="text/javascript">
-  function createPlanningEvent(identifier) {
-    $.ajax({
-      url: $(identifier).data("url"),
-      data: {},
-      dataType: "json",
-      success: function (data) {
-        $("#modal-title").html(data.title);
-        $("#modal-body").html(data.body);
-        if (data.footer) {
-          $("#modal-footer").html(data.footer);
-          $("#modal-footer").removeClass("d-none")
-        }
-      },
-      error: function (jqXHR, textStatus, errorThrown) {
-        alert("Something went wrong. If the issue persists, please reach out to the Bould team.");
-      }
-    });
-  }
-  function editPlanningEvent(identifier) {
-    $.ajax({
-      url: $(identifier).data("url"),
-      data: {},
-      dataType: "json",
-      success: function (data) {
-        $("#modal-title").html(data.title);
-        $("#modal-body").html(data.body);
-        if (data.footer) {
-          $("#modal-footer").html(data.footer);
-          $("#modal-footer").removeClass("d-none")
-        }
-      },
-      error: function (jqXHR, textStatus, errorThrown) {
-        alert("Something went wrong. If the issue persists, please reach out to the Bould team.");
-      }
-    });
-  }
-</script>
 
 {% endblock %}
