@@ -25,4 +25,6 @@ urlpatterns = [
     path("event/<int:planning_event_id>/", views.planning_event_detail, name="planning_event_detail"),
     path("event/<int:planning_event_id>/edit/", views.planning_event_edit, name="planning_event_edit"),
     path("event/<int:planning_event_id>/delete/", views.planning_event_delete, name="planning_event_delete"),
+    path("event/<int:planning_event_id>/criterion/create/", views.criterion_weight_create, name="criterion_weight_create"),
+    path("event/<int:planning_event_id>/score/problem/", views.planning_event_business_problem_score, name="planning_event_business_problem_score"),
 ]

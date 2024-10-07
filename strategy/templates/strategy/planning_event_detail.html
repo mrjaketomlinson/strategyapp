@@ -27,6 +27,91 @@
       <h1>{{ event.name }}</h1>
     </div>
   </div>
+  <div class="mt-2">
+    <div class="d-flex justify-content-between">
+      <h3>Criteria</h3>
+      <button type="button" onclick="addCrtierion(this)" id="add-criterion-btn" class="btn" data-url="{% url 'strategy:criterion_weight_create' planning_event_id=event.pk %}">
+        <span class="material-symbols-outlined primary-hover">
+          add
+        </span>
+      </button>
+    </div>
+    <div id="criterionList">
+      {% for c in criteria %}
+        <p><span class="criterion-name">{{ c.criterion.name }}</span> - <span class="criterion-weight">{{ c.weight }}</span></p>
+      {% endfor %}
+    </div>
+  </div>
+  <div class="mt-2">
+    <div class="d-flex justify-content-between">
+      <h3>Business Problems</h3>
+      <button type="button" onclick="" id="add-business-problem-btn" class="btn" data-url="">
+        <span class="material-symbols-outlined primary-hover">
+          add
+        </span>
+      </button>
+    </div>
+    <div id="businessProblemList">
+      {% for b in business_problems %}
+      <p>{{ b.business_problem.summary }}</p>
+      {% endfor %}
+    </div>
+  </div>
 </div>
+
+<div id="criterion-template" class="d-none">
+  <p><span class="criterion-name"></span> - <span class="criterion-weight"></span></p>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+
+<script type="text/javascript">
+  function addCrtierion(identifier) {
+    var url = $(identifier).data("url");
+    $.ajax({
+      url: url,
+      data: {},
+      dataType: "json",
+      success: function (data) {
+        $("#criterionList").append(data.form);
+        var form = $('#criterionList').find('form').last();
+        form.submit(function(event) {
+          event.preventDefault();
+          var formData = $(this).serialize();
+          $.ajax({
+            type: 'POST',
+            url: url,
+            data: formData,
+            success: function(response) {
+              if (response.is_success) {
+                var criterion = $("#criterion-template").clone();
+                criterion.attr("id", `criterion${response.pk}`);
+                // criterion.find("form").attr("action", response.action);
+                // criterion.find("form").on("submit", deletecriterion);
+                criterion.find(".criterion-name").text(form.find("#id_criterion").children("option").filter(":selected").text());
+                criterion.find(".criterion-weight").text(form.find("#id_weight").val());
+                // criterion.find("p").addClass(`criterion${response.pk}-summary`);
+                criterion.removeClass("d-none");
+                form.parent("div").replaceWith(criterion);
+                // TODO: Add toast success
+              } else {
+                // TODO: Proper error/message handling
+                alert(response.msg);
+              }
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+              alert("Something went wrong. If the issue persists, please reach out to the Bould team.");
+            }
+          });
+        });
+      },
+      error: function (jqXHR, textStatus, errorThrown) {
+        alert("Something went wrong. If the issue persists, please reach out to the Bould team.");
+      }
+    });
+  }
+</script>
 
 {% endblock %}

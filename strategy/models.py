@@ -174,28 +174,10 @@ class CriterionWeight(models.Model):
         return f"{self.criterion.name} - {self.planning_event}: {self.weight}"
 
 
-class Score(models.Model):
-    criterion_weight = models.ForeignKey(CriterionWeight, on_delete=models.CASCADE)
-    # Generic relationship will be to the object getting scored
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    object_id = models.PositiveIntegerField()
-    content_object = GenericForeignKey("content_type", "object_id")
-    score = models.PositiveIntegerField(
-        validators=[MinValueValidator(1), MaxValueValidator(10)]
-    )
-
-    def weighted_score(self):
-        return self.score * self.criterion_weight.weight
-
-    def __str__(self):
-        return f"{self.content_object} - {self.criterion_weight.criterion.name}: {self.score}"
-
-
 class PlanningEventBusinessProblem(models.Model):
     planning_event = models.ForeignKey(PlanningEvent, on_delete=models.CASCADE)
     business_problem = models.ForeignKey(BusinessProblem, on_delete=models.CASCADE)
     is_chosen = models.BooleanField(default=False)
-    scores = models.ManyToManyField(Score)
     override_score = models.PositiveIntegerField(null=True)
     final_score = models.PositiveIntegerField(null=True)
 
@@ -204,17 +186,29 @@ class PlanningEventBusinessProblem(models.Model):
 
     def get_calculated_score(self):
         calculated_score = None
-        weighted_scores = [x.weighted_score() for x in self.scores.all()]
+        try:
+            weighted_scores = [x.weighted_score() for x in self.scores.all()]
+        except ValueError:
+            weighted_scores = []
         if weighted_scores:
             calculated_score = statistics.fmean(weighted_scores)
         return calculated_score
+    
+    def save(self, *args, **kwargs):
+        """
+        Override save method to update final score whenever the object is saved.
+        """
+        if not self.override_score:
+            self.final_score = self.get_calculated_score()
+        else:
+            self.final_score = self.override_score
+        super().save(*args, **kwargs)
 
 
 class PlanningEventStrategy(models.Model):
     planning_event = models.ForeignKey(PlanningEvent, on_delete=models.CASCADE)
     strategy = models.ForeignKey(Strategy, on_delete=models.CASCADE)
     is_chosen = models.BooleanField(default=False)
-    scores = models.ManyToManyField(Score)
     override_score = models.PositiveIntegerField(null=True)
     final_score = models.PositiveIntegerField(null=True)
 
@@ -223,17 +217,29 @@ class PlanningEventStrategy(models.Model):
 
     def get_calculated_score(self):
         calculated_score = None
-        weighted_scores = [x.weighted_score() for x in self.scores.all()]
+        try:
+            weighted_scores = [x.weighted_score() for x in self.scores.all()]
+        except ValueError:
+            weighted_scores = []
         if weighted_scores:
             calculated_score = statistics.fmean(weighted_scores)
         return calculated_score
+
+    def save(self, *args, **kwargs):
+        """
+        Override save method to update final score whenever the object is saved.
+        """
+        if not self.override_score:
+            self.final_score = self.get_calculated_score()
+        else:
+            self.final_score = self.override_score
+        super().save(*args, **kwargs)
 
 
 class PlanningEventProject(models.Model):
     planning_event = models.ForeignKey(PlanningEvent, on_delete=models.CASCADE)
     project = models.ForeignKey("project.Project", on_delete=models.CASCADE)
     is_chosen = models.BooleanField(default=False)
-    scores = models.ManyToManyField(Score)
     override_score = models.PositiveIntegerField(null=True)
     final_score = models.PositiveIntegerField(null=True)
 
@@ -242,7 +248,65 @@ class PlanningEventProject(models.Model):
 
     def get_calculated_score(self):
         calculated_score = None
-        weighted_scores = [x.weighted_score() for x in self.scores.all()]
+        try:
+            weighted_scores = [x.weighted_score() for x in self.scores.all()]
+        except ValueError:
+            weighted_scores = []        
         if weighted_scores:
             calculated_score = statistics.fmean(weighted_scores)
         return calculated_score
+
+    def save(self, *args, **kwargs):
+        """
+        Override save method to update final score whenever the object is saved.
+        """
+        if not self.override_score:
+            self.final_score = self.get_calculated_score()
+        else:
+            self.final_score = self.override_score
+        super().save(*args, **kwargs)
+
+
+class BusinessProblemScore(models.Model):
+    planning_event_business_problem = models.ForeignKey(PlanningEventBusinessProblem, on_delete=models.CASCADE, related_name='scores')
+    criterion_weight = models.ForeignKey(CriterionWeight, on_delete=models.CASCADE)
+    scoring_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING)
+    score = models.PositiveIntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(10)]
+    )
+
+    def weighted_score(self):
+        return self.score * self.criterion_weight.weight
+
+    def __str__(self):
+        return f"{self.planning_event_business_problem.pk} - {self.criterion_weight.criterion.name}: {self.score}"
+
+
+class StrategyScore(models.Model):
+    planning_event_strategy = models.ForeignKey(PlanningEventStrategy, on_delete=models.CASCADE, related_name='scores')
+    criterion_weight = models.ForeignKey(CriterionWeight, on_delete=models.CASCADE)
+    scoring_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING)
+    score = models.PositiveIntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(10)]
+    )
+
+    def weighted_score(self):
+        return self.score * self.criterion_weight.weight
+
+    def __str__(self):
+        return f"{self.planning_event_strategy.pk} - {self.criterion_weight.criterion.name}: {self.score}"
+    
+
+class ProjectScore(models.Model):
+    planning_event_project = models.ForeignKey(PlanningEventProject, on_delete=models.CASCADE, related_name='scores')
+    criterion_weight = models.ForeignKey(CriterionWeight, on_delete=models.CASCADE)
+    scoring_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING)
+    score = models.PositiveIntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(10)]
+    )
+
+    def weighted_score(self):
+        return self.score * self.criterion_weight.weight
+
+    def __str__(self):
+        return f"{self.planning_event_project.pk} - {self.criterion_weight.criterion.name}: {self.score}"
