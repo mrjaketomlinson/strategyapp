@@ -2,6 +2,17 @@
 
 {% block title %}Planning Event{% endblock %}
 
+{% block head %}
+
+<style>
+  .action-column {
+    width: 80px;
+    text-align: center;
+  }
+</style>
+
+{% endblock %}
+
 {% block body %}
 
 <div class="container">
@@ -30,44 +41,207 @@
   <div class="mt-2">
     <div class="d-flex justify-content-between">
       <h3>Criteria</h3>
-      <button type="button" onclick="addCrtierion(this)" id="add-criterion-btn" class="btn" data-url="{% url 'strategy:criterion_weight_create' planning_event_id=event.pk %}">
+      <!-- TODO: Add button to remove the form -->
+      <button type="button" onclick="addCrtierion(this)" id="add-criterion-btn" class="btn"
+        data-url="{% url 'strategy:criterion_weight_create' planning_event_id=event.pk %}">
         <span class="material-symbols-outlined primary-hover">
           add
         </span>
       </button>
     </div>
     <div id="criterionList">
-      {% for c in criteria %}
-        <p><span class="criterion-name">{{ c.criterion.name }}</span> - <span class="criterion-weight">{{ c.weight }}</span></p>
-      {% endfor %}
+      <table id="criteriaTable" class="table table-striped table-bordered table-sm table-responsive">
+        <thead class="thead-dark">
+          <tr>
+            <th scope="col">Criteria</th>
+            <th scope="col">Type</th>
+            <th scope="col">Weight</th>
+            <th scope="col" class="action-column">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in criteria %}
+          <tr id="criterion-weight-{{c.pk}}">
+            <td class="criterion-weight-name">{{ c.criterion.name }}</td>
+            <td class="criterion-weight-type">{{ c.criterion.get_criterion_type_display }}</td>
+            <td class="criterion-weight-weight">{{ c.weight }}</td>
+            <td class="d-flex justify-content-center criterion-weight-actions">
+              <button type="button" class="btn p-0 me-2" onclick="editCriterion(this)" data-bs-toggle="modal"
+                data-bs-target="#modal"
+                data-url="{% url 'strategy:criterion_weight_edit' planning_event_id=event.pk criterion_weight_id=c.pk %}">
+                <span class="material-symbols-outlined primary-hover">
+                  edit
+                </span>
+              </button>
+              <form class="criterion-weight-del-form"
+                action="{% url 'strategy:criterion_weight_delete' planning_event_id=event.pk criterion_weight_id=c.pk %}"
+                method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn p-0 m-0">
+                  <span class="material-symbols-outlined danger-hover">
+                    delete
+                  </span>
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="3">No criteria added yet.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
   </div>
+
   <div class="mt-2">
     <div class="d-flex justify-content-between">
       <h3>Business Problems</h3>
-      <button type="button" onclick="" id="add-business-problem-btn" class="btn" data-url="">
+      <button type="button" onclick="associateBusinessProblem(this)" id="add-business-problem-btn" class="btn"
+        data-url="{% url 'strategy:planning_event_business_problem_associate' planning_event_id=event.pk %}"
+        data-bs-toggle="modal" data-bs-target="#modal">
         <span class="material-symbols-outlined primary-hover">
           add
         </span>
       </button>
     </div>
     <div id="businessProblemList">
-      {% for b in business_problems %}
-      <p>{{ b.business_problem.summary }}</p>
-      {% endfor %}
+      <table class="table table-striped table-bordered">
+        <thead class="thead-dark">
+          <tr>
+            <th scope="col">Rank</th>
+            <th scope="col">Summary</th>
+            <th scope="col">Weighted Score</th>
+            <th scope="col" class="action-column">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="sortable-rows">
+          {% for b in business_problems %}
+          <tr id="peba-{{b.pk}}" data-id="{{ b.pk }}">
+            <td class="rank">{{ b.rank|default_if_none:forloop.counter }}</td>
+            <td class="businessProblem{{b.business_problem.pk}}-summary">{{ b.business_problem.summary }}</td>
+            <td>{{ b.final_score|floatformat:"-2" }}</td>
+            <td>
+              <form class="planning-event-business-problem-del-form"
+                action="{% url 'strategy:planning_event_business_problem_delete' planning_event_id=event.pk business_problem_id=b.business_problem.pk %}"
+                method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn p-0 m-0">
+                  <span class="material-symbols-outlined danger-hover">
+                    delete
+                  </span>
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="3" class="text-center">No data available.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
   </div>
+
+  <div class="mt-2">
+    <!-- TODO: Only show this button if you're a part of the people that should be doing any scoring -->
+    <a href="{% url 'strategy:planning_event_business_problem_score' planning_event_id=event.pk %}"
+      class="btn btn-primary d-flex justify-content-center">Prioritize Business Problems</a>
+  </div>
+  <!-- TODO: If there are any scores, shows the aggregated scores with the business problems -->
+  <!-- TODO: Should have a button to drill into details, but should only show the ordered list on this page. -->
 </div>
 
-<div id="criterion-template" class="d-none">
-  <p><span class="criterion-name"></span> - <span class="criterion-weight"></span></p>
-</div>
+<form id="criterion-weight-del-template" class="criterion-weight-del-form d-none" action="" method="post">
+  {% csrf_token %}
+  <button type="submit" class="btn p-0 m-0">
+    <span class="material-symbols-outlined danger-hover">
+      delete
+    </span>
+  </button>
+</form>
+<form id="planning-event-business-problem-del-template" class="planning-event-business-problem-del-form d-none"
+  action="" method="post">
+  {% csrf_token %}
+  <button type="submit" class="btn p-0 m-0">
+    <span class="material-symbols-outlined danger-hover">
+      delete
+    </span>
+  </button>
+</form>
 
 {% endblock %}
 
 {% block scripts %}
 
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 <script type="text/javascript">
+  function addCriterionToTable(name, type, weight, pk, action) {
+    // Create a new <tr> element
+    var $newRow = $('<tr>')
+      .attr("id", `criterion-weight-${pk}`);
+
+    // Append <td> elements with the provided values
+    $newRow.append($('<td>').text(name).addClass("criterion-weight-name"));
+    $newRow.append($('<td>').text(type).addClass("criterion-weight-type"));
+    $newRow.append($('<td>').text(weight).addClass("criterion-weight-weight"));
+
+    // Create the action buttons (update and delete)
+    var $actionTd = $('<td>').addClass("d-flex justify-content-center criterion-weight-actions");
+
+    // Update button
+    var $editSpan = $('<span>')
+      .addClass("material-symbols-outlined primary-hover")
+      .text("edit");
+    var $updateButton = $('<button>')
+      .addClass('btn p-0 me-2')
+      .append($editSpan)
+      .on('click', editCriterion);
+
+    // Delete button
+    var $deleteButton = $("#criterion-weight-del-template")
+      .clone()
+      .attr("id", `criterion-delform-${pk}`)
+      .attr("action", action)
+      .on("submit", deleteCriterion)
+      .removeClass("d-none");
+
+    // Append buttons to the action <td>
+    $actionTd.append($updateButton).append($deleteButton);
+
+    // Append the action <td> to the row
+    $newRow.append($actionTd);
+
+    // Append the new row to the table's <tbody>
+    $('#criteriaTable tbody').append($newRow);
+  }
+
+  function deleteCriterion(event) {
+    event.preventDefault();
+    const form = $(this);
+    const actionUrl = form.attr("action");
+    const formData = form.serialize();
+    $.ajax({
+      type: 'POST',
+      url: actionUrl,
+      data: formData,
+      success: function (response) {
+        if (response.is_success) {
+          form.closest("tr").remove();
+          // TODO: Add toast success
+        } else {
+          alert(response.msg);
+        }
+      },
+      error: function (jqXHR, textStatus, errorThrown) {
+        alert("Something went wrong. If the issue persists, please reach out to the Bould team.");
+      }
+    });
+  }
+
+
   function addCrtierion(identifier) {
     var url = $(identifier).data("url");
     $.ajax({
@@ -77,31 +251,27 @@
       success: function (data) {
         $("#criterionList").append(data.form);
         var form = $('#criterionList').find('form').last();
-        form.submit(function(event) {
+        form.submit(function (event) {
           event.preventDefault();
           var formData = $(this).serialize();
           $.ajax({
             type: 'POST',
             url: url,
             data: formData,
-            success: function(response) {
+            success: function (response) {
               if (response.is_success) {
-                var criterion = $("#criterion-template").clone();
-                criterion.attr("id", `criterion${response.pk}`);
-                // criterion.find("form").attr("action", response.action);
-                // criterion.find("form").on("submit", deletecriterion);
-                criterion.find(".criterion-name").text(form.find("#id_criterion").children("option").filter(":selected").text());
-                criterion.find(".criterion-weight").text(form.find("#id_weight").val());
-                // criterion.find("p").addClass(`criterion${response.pk}-summary`);
-                criterion.removeClass("d-none");
-                form.parent("div").replaceWith(criterion);
+                var name = form.find("#id_criterion").children("option").filter(":selected").text();
+                var type = response.criterion_type;
+                var weight = form.find("#id_weight").val();
+                addCriterionToTable(name, type, weight, response.pk, response.action);
+                form.parent("div").remove();
                 // TODO: Add toast success
               } else {
                 // TODO: Proper error/message handling
                 alert(response.msg);
               }
             },
-            error: function(jqXHR, textStatus, errorThrown) {
+            error: function (jqXHR, textStatus, errorThrown) {
               alert("Something went wrong. If the issue persists, please reach out to the Bould team.");
             }
           });
@@ -112,6 +282,167 @@
       }
     });
   }
+
+  function editCriterion(identifier) {
+    $.ajax({
+      url: $(identifier).data("url"),
+      data: {},
+      dataType: "json",
+      success: function (data) {
+        $("#modal-title").html(data.title);
+        $("#modal-body").html(data.body);
+        if (data.footer) {
+          $("#modal-footer").html(data.footer);
+          $("#modal-footer").removeClass("d-none");
+        }
+        $("#criterion-weight-edit-form").on("submit", function (event) {
+          event.preventDefault();
+          var formData = $(this).serialize();
+          $.ajax({
+            type: 'POST',
+            url: $(this).attr("action"),
+            data: formData,
+            success: function (response) {
+              const modal = bootstrap.Modal.getInstance($('#modal'));
+              modal.hide();
+              if (response.is_success) {
+                // TODO: Toast success message
+                $(`#criterion-weight-${response.pk} .criterion-weight-weight`).text(response.weight);
+              } else {
+                // TODO: Proper error/message handling
+                alert(response.msg);
+              }
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+              alert("Something went wrong. If the issue persists, please reach out to the Bould team.");
+            }
+          });
+        });
+      },
+      error: function (jqXHR, textStatus, errorThrown) {
+        alert("Something went wrong. If the issue persists, please reach out to the Bould team.");
+      }
+    });
+  }
+
+  function associateBusinessProblem(identifier) {
+    $.ajax({
+      url: $(identifier).data("url"),
+      data: {},
+      dataType: "json",
+      success: function (data) {
+        $("#modal-title").html(data.title);
+        $("#modal-body").html(data.body);
+        if (data.footer) {
+          $("#modal-footer").html(data.footer);
+          $("#modal-footer").removeClass("d-none");
+        }
+        $("#business-problem-associate-form").on("submit", function (event) {
+          event.preventDefault();
+          var formData = $(this).serialize();
+          $.ajax({
+            type: 'POST',
+            url: $(this).attr("action"),
+            data: formData,
+            success: function (response) {
+              const modal = bootstrap.Modal.getInstance($('#modal'));
+              modal.hide();
+              if (response.is_success) {
+                // TODO: Toast success message
+                var $businessproblem = $("<div>")
+                  .attr("id", `businessProblem${response.business_problem_id}`)
+                  .addClass("d-flex business-problem-item");
+                var $summary = $("<p>")
+                  .addClass(`me-1 businessProblem${response.business_problem_id}-summary`)
+                  .text(response.summary);
+                var $deleteButton = $("#planning-event-business-problem-del-template")
+                  .clone()
+                  .attr("id", `planning-event-business-problem-delform-${response.business_problem_id}`)
+                  .attr("action", response.action)
+                  .on("submit", deletePlanningEventBusinessProblem)
+                  .removeClass("d-none");
+
+                $businessproblem.append($summary).append($deleteButton);
+
+                $("#businessProblemList").append($businessproblem);
+              } else {
+                // TODO: Proper error/message handling
+                alert(response.msg);
+              }
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+              alert("Something went wrong. If the issue persists, please reach out to the Bould team.");
+            }
+          });
+        });
+      },
+      error: function (jqXHR, textStatus, errorThrown) {
+        alert("Something went wrong. If the issue persists, please reach out to the Bould team.");
+      }
+    });
+  }
+
+  function deletePlanningEventBusinessProblem(event) {
+    event.preventDefault();
+    const form = $(this);
+    const actionUrl = form.attr("action");
+    const formData = form.serialize();
+    $.ajax({
+      type: 'POST',
+      url: actionUrl,
+      data: formData,
+      success: function (response) {
+        if (response.is_success) {
+          form.closest(".business-problem-item").remove();
+          // TODO: Add toast success
+        } else {
+          alert(response.msg);
+        }
+      },
+      error: function (jqXHR, textStatus, errorThrown) {
+        alert("Something went wrong. If the issue persists, please reach out to the Bould team.");
+      }
+    });
+  }
+
+  $(document).ready(function () {
+    $(".criterion-weight-del-form").on("submit", deleteCriterion);
+    $(".planning-event-business-problem-del-form").on("submit", deletePlanningEventBusinessProblem);
+
+    var sortable = new Sortable(document.getElementById('sortable-rows'), {
+      animation: 150,
+      onEnd: function (evt) {
+        // Capture the new order of rows
+        var new_order = [];
+        $('#sortable-rows tr').each(function () {
+          new_order.push($(this).data('id'));
+        });
+        // Send the new order to the server via AJAX
+        $.ajax({
+          type: 'POST',
+          url: "{% url 'strategy:planning_event_business_problem_set_rank' planning_event_id=event.pk %}",
+          data: {
+            'new_order[]': new_order,
+            'csrfmiddlewaretoken': '{{ csrf_token }}'
+          },
+          success: function (response) {
+            if (response.is_success) {
+              $.each(response.order, function(key, value) {
+                $(`#peba-${key} .rank`).text(value);
+              });
+            } else {
+              // TODO: Proper error handling
+              console.error(response);
+            }
+          },
+          error: function (response) {
+            // TODO: Proper error handling
+            console.error('An error occurred:', response);
+          }
+        });
+      }
+    });
+  });
 </script>
 
 {% endblock %}

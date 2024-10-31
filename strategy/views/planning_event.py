@@ -16,6 +16,8 @@ from strategy.forms import (
     PlanningEventEditForm,
     CriterionWeightCreateForm,
     BusinessProblemScoreForm,
+    CriterionWeightEditForm,
+    PlanningEventBusinessProblemAssociateForm,
 )
 from strategy.models import (
     PlanningEvent,
@@ -80,7 +82,7 @@ def planning_event_detail(request, planning_event_id):
     criteria = CriterionWeight.objects.filter(planning_event=planning_event)
     business_problems = PlanningEventBusinessProblem.objects.filter(
         planning_event=planning_event
-    )
+    ).order_by("rank", "-final_score")
     context = {
         "event": planning_event,
         "criteria": criteria,
@@ -107,7 +109,7 @@ def planning_event_edit(request, planning_event_id):
                 )
         return redirect(
             "strategy:planning_event_detail",
-            kwargs={"planning_event_id": planning_event.pk},
+            planning_event_id=planning_event.pk,
         )
     else:
         initial = {"modified_by": request.user}
@@ -171,12 +173,21 @@ def criterion_weight_create(request, planning_event_id):
         return JsonResponse(json_response)
 
     if request.method == "POST":
+        criterion_type = None
         try:
             form = CriterionWeightCreateForm(request.POST)
             if form.is_valid():
                 criterion_weight = form.save()
                 is_success = True
                 pk = criterion_weight.pk
+                criterion_type = criterion_weight.criterion.get_criterion_type_display()
+                action = reverse(
+                    "strategy:criterion_weight_delete",
+                    kwargs={
+                        "planning_event_id": planning_event.pk,
+                        "criterion_weight_id": pk,
+                    },
+                )
                 # messages.success(request, "Assumption created successfully!")
             else:
                 is_success = False
@@ -200,6 +211,7 @@ def criterion_weight_create(request, planning_event_id):
             "msg": msg,
             "pk": pk,
             "action": action,
+            "criterion_type": criterion_type,
         }
         return JsonResponse(json_response)
     else:
@@ -228,6 +240,179 @@ def criterion_weight_create(request, planning_event_id):
 
 
 @logged_in_user
+@require_http_methods(["GET", "POST"])
+def criterion_weight_edit(request, planning_event_id, criterion_weight_id):
+    planning_event = get_object_or_404(
+        PlanningEvent, pk=planning_event_id, organization=request.user.organization
+    )
+    criterion_weight = get_object_or_404(
+        CriterionWeight, pk=criterion_weight_id, planning_event=planning_event
+    )
+    if request.method == "POST":
+        form = CriterionWeightEditForm(request.POST, instance=criterion_weight)
+        if form.is_valid():
+            criterion_weight = form.save()
+            is_success = True
+            msg = "Update successful!"
+            weight = criterion_weight.weight
+            pk = criterion_weight.pk
+        else:
+            is_success = False
+            msg = "There was an issue deleting that criterion."
+            weight = None
+            pk = None
+
+        return JsonResponse(
+            {"is_success": is_success, "msg": msg, "weight": weight, "pk": pk}
+        )
+    else:
+        initial = {"modified_by": request.user}
+        form = CriterionWeightEditForm(instance=criterion_weight, initial=initial)
+        context = {
+            "body": render_to_string(
+                "base_form.html",
+                {
+                    "form": form,
+                    "url": reverse(
+                        "strategy:criterion_weight_edit",
+                        kwargs={
+                            "planning_event_id": planning_event_id,
+                            "criterion_weight_id": criterion_weight_id,
+                        },
+                    ),
+                    "form_id": "criterion-weight-edit-form",
+                    "button": "Update",
+                },
+                request=request,
+            ),
+            "title": "Update criterion weight",
+        }
+        return JsonResponse(context)
+
+
+@logged_in_user
+@require_http_methods(["GET", "POST"])
+def criterion_weight_delete(request, planning_event_id, criterion_weight_id):
+    try:
+        is_success = True
+        msg = "Criterion deleted successfully."
+        planning_event = get_object_or_404(
+            PlanningEvent, pk=planning_event_id, organization=request.user.organization
+        )
+        criterion_weight = get_object_or_404(
+            CriterionWeight, pk=criterion_weight_id, planning_event=planning_event
+        )
+        criterion_weight.delete()
+    except Exception as e:
+        is_success = False
+        msg = "There was an issue deleting that criterion."
+        # messages.error(request, "There was an issue deleting that assumption.")
+        # TODO: proper logging
+        print(
+            f"criterion_weight_delete Exception. user: {request.user}, criterion_weight_id: {criterion_weight_id}.",
+            e,
+        )
+    return JsonResponse({"is_success": is_success, "msg": msg})
+
+
+@logged_in_user
+@require_http_methods(["GET", "POST"])
+def planning_event_business_problem_associate(request, planning_event_id):
+    planning_event = get_object_or_404(
+        PlanningEvent, id=planning_event_id, organization=request.user.organization
+    )
+    business_problem_ids = PlanningEventBusinessProblem.objects.filter(
+        planning_event=planning_event
+    ).values_list("business_problem_id", flat=True)
+    if request.method == "POST":
+        form = PlanningEventBusinessProblemAssociateForm(
+            request.POST, request=request, business_problem_ids=business_problem_ids
+        )
+        if form.is_valid():
+            peba = form.save()
+            is_success = True
+            msg = "Update successful!"
+            summary = peba.business_problem.summary
+            business_problem_id = peba.business_problem.id
+            action = reverse(
+                "strategy:planning_event_business_problem_delete",
+                kwargs={
+                    "planning_event_id": planning_event.pk,
+                    "business_problem_id": business_problem_id,
+                },
+            )
+        else:
+            # TODO: Error logging
+            is_success = False
+            msg = "There was an issue adding that business problem."
+            summary = None
+            business_problem_id = None
+            action = None
+
+        return JsonResponse(
+            {
+                "is_success": is_success,
+                "msg": msg,
+                "summary": summary,
+                "business_problem_id": business_problem_id,
+                "action": action,
+            }
+        )
+    else:
+        initial = {"planning_event": planning_event}
+        form = PlanningEventBusinessProblemAssociateForm(
+            initial=initial, request=request, business_problem_ids=business_problem_ids
+        )
+        context = {
+            "body": render_to_string(
+                "base_form.html",
+                {
+                    "form": form,
+                    "url": reverse(
+                        "strategy:planning_event_business_problem_associate",
+                        kwargs={
+                            "planning_event_id": planning_event_id,
+                        },
+                    ),
+                    "form_id": "business-problem-associate-form",
+                    "button": "Add",
+                },
+                request=request,
+            ),
+            "title": "Add business problem",
+        }
+        return JsonResponse(context)
+
+
+@logged_in_user
+@require_POST
+def planning_event_business_problem_delete(
+    request, planning_event_id, business_problem_id
+):
+    try:
+        is_success = True
+        msg = "Business problem removed successfully."
+        planning_event_business_problem = get_object_or_404(
+            PlanningEventBusinessProblem,
+            planning_event_id=planning_event_id,
+            business_problem_id=business_problem_id,
+            planning_event__organization=request.user.organization,
+            business_problem__organization=request.user.organization,
+        )
+        planning_event_business_problem.delete()
+    except Exception as e:
+        is_success = False
+        msg = "There was an issue removing that business problem."
+        # TODO: proper logging
+        print(
+            f"planning_event_business_problem_delete Exception. user: {request.user}, planning_event_id: {planning_event_id}. business_problem_id: {business_problem_id}.",
+            e,
+        )
+    return JsonResponse({"is_success": is_success, "msg": msg})
+
+
+@logged_in_user
+@require_http_methods(["GET", "POST"])
 def planning_event_business_problem_score(request, planning_event_id):
     # Fetch the relevant Planning Event
     planning_event = get_object_or_404(
@@ -298,6 +483,15 @@ def planning_event_business_problem_score(request, planning_event_id):
                 if updated_scores:
                     BusinessProblemScore.objects.bulk_update(updated_scores, ["score"])
 
+                final_score_updates = []
+                for pebp in planning_event_bps:
+                    pebp.final_score = pebp.get_calculated_score()
+                    final_score_updates.append(pebp)
+
+                PlanningEventBusinessProblem.objects.bulk_update(
+                    final_score_updates, ["final_score"]
+                )
+
         except Exception as e:
             print(f"Error saving scores: {e}")
 
@@ -315,3 +509,33 @@ def planning_event_business_problem_score(request, planning_event_id):
     }
 
     return render(request, "strategy/planning_event_business_problem.html", context)
+
+
+@logged_in_user
+@require_POST
+def planning_event_business_problem_set_rank(request, planning_event_id):
+    is_success = True
+    msg = ""
+    order = {}
+    try:
+        planning_event_bps = PlanningEventBusinessProblem.objects.filter(
+            planning_event_id=planning_event_id,
+            planning_event__organization=request.user.organization,
+        )
+        order = {
+            o: i for i, o in enumerate(request.POST.getlist("new_order[]", []), start=1)
+        }
+        updated_planning_events = []
+        for pebps in planning_event_bps:
+            if pebps.rank != order[str(pebps.pk)]:
+                pebps.rank = order[str(pebps.pk)]
+                updated_planning_events.append(pebps)
+        PlanningEventBusinessProblem.objects.bulk_update(
+            updated_planning_events, ["rank"]
+        )
+    except Exception as e:
+        # TODO: Proper exception handling/logging
+        is_success = False
+        msg = f"Error updating rank. {e}"
+    result = {"is_success": is_success, "msg": msg, "order": order}
+    return JsonResponse(result)

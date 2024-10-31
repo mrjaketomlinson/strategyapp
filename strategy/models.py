@@ -39,6 +39,9 @@ class BusinessProblem(models.Model):
         TimePeriod, on_delete=models.SET_NULL, null=True, blank=True
     )
 
+    def __str__(self):
+        return self.summary
+
 
 class Strategy(models.Model):
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
@@ -178,8 +181,8 @@ class PlanningEventBusinessProblem(models.Model):
     planning_event = models.ForeignKey(PlanningEvent, on_delete=models.CASCADE)
     business_problem = models.ForeignKey(BusinessProblem, on_delete=models.CASCADE)
     is_chosen = models.BooleanField(default=False)
-    override_score = models.PositiveIntegerField(null=True)
-    final_score = models.PositiveIntegerField(null=True)
+    rank = models.PositiveIntegerField(null=True)
+    final_score = models.FloatField(null=True)
 
     class Meta:
         unique_together = ["planning_event", "business_problem"]
@@ -198,10 +201,7 @@ class PlanningEventBusinessProblem(models.Model):
         """
         Override save method to update final score whenever the object is saved.
         """
-        if not self.override_score:
-            self.final_score = self.get_calculated_score()
-        else:
-            self.final_score = self.override_score
+        # self.final_score = self.get_calculated_score()
         super().save(*args, **kwargs)
 
 

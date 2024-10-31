@@ -26,5 +26,10 @@ urlpatterns = [
     path("event/<int:planning_event_id>/edit/", views.planning_event_edit, name="planning_event_edit"),
     path("event/<int:planning_event_id>/delete/", views.planning_event_delete, name="planning_event_delete"),
     path("event/<int:planning_event_id>/criterion/create/", views.criterion_weight_create, name="criterion_weight_create"),
+    path("event/<int:planning_event_id>/problem/associate/", views.planning_event_business_problem_associate, name="planning_event_business_problem_associate"),
+    path("event/<int:planning_event_id>/problem/<int:business_problem_id>/delete/", views.planning_event_business_problem_delete, name="planning_event_business_problem_delete"),
+    path("event/<int:planning_event_id>/criterion/<int:criterion_weight_id>/edit/", views.criterion_weight_edit, name="criterion_weight_edit"),
+    path("event/<int:planning_event_id>/criterion/<int:criterion_weight_id>/delete/", views.criterion_weight_delete, name="criterion_weight_delete"),
     path("event/<int:planning_event_id>/score/problem/", views.planning_event_business_problem_score, name="planning_event_business_problem_score"),
+    path("event/<int:planning_event_id>/problem/set-rank/", views.planning_event_business_problem_set_rank, name="planning_event_business_problem_set_rank"),
 ]
