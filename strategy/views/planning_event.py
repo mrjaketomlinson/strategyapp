@@ -11,6 +11,7 @@ from django.views.decorators.http import require_GET, require_POST, require_http
 
 # App
 from account.decorators import logged_in_user
+from project.models import Project
 from strategy.forms import (
     PlanningEventCreateForm,
     PlanningEventEditForm,
@@ -21,9 +22,14 @@ from strategy.forms import (
 )
 from strategy.models import (
     PlanningEvent,
+    Strategy,
     CriterionWeight,
     PlanningEventBusinessProblem,
     BusinessProblemScore,
+    PlanningEventStrategy,
+    StrategyScore,
+    PlanningEventProject,
+    ProjectScore
 )
 
 
@@ -82,11 +88,19 @@ def planning_event_detail(request, planning_event_id):
     criteria = CriterionWeight.objects.filter(planning_event=planning_event)
     business_problems = PlanningEventBusinessProblem.objects.filter(
         planning_event=planning_event
-    ).order_by("rank", "-final_score")
+    ).order_by("-is_chosen", "rank", "-final_score")
+    strategies = PlanningEventStrategy.objects.filter(
+        planning_event=planning_event
+    ).order_by("-is_chosen", "rank", "-final_score")
+    projects = PlanningEventProject.objects.filter(
+        planning_event=planning_event
+    ).order_by("-is_chosen", "rank", "-final_score")
     context = {
         "event": planning_event,
         "criteria": criteria,
         "business_problems": business_problems,
+        "strategies": strategies,
+        "projects": projects
     }
     return render(request, "strategy/planning_event_detail.html", context)
 
@@ -539,3 +553,352 @@ def planning_event_business_problem_set_rank(request, planning_event_id):
         msg = f"Error updating rank. {e}"
     result = {"is_success": is_success, "msg": msg, "order": order}
     return JsonResponse(result)
+
+
+@logged_in_user
+@require_POST
+def planning_event_business_problem_choose(request, planning_event_id):
+    selected_ids = request.POST.getlist("selected_ids[]")
+    updates = []
+    try:
+        # Update PlanningEventBusinessProblems
+        planning_event = PlanningEvent.objects.get(
+            pk=planning_event_id, organization=request.user.organization
+        )
+        selected_pebps = PlanningEventBusinessProblem.objects.filter(
+            id__in=selected_ids, planning_event=planning_event
+        ).order_by("-final_score")
+        for i, pebp in enumerate(selected_pebps, start=1):
+            pebp.rank = i
+            pebp.is_chosen = True
+            updates.append(pebp)
+
+        unselected_pebps = (
+            PlanningEventBusinessProblem.objects.filter(planning_event=planning_event)
+            .exclude(id__in=selected_ids)
+            .order_by("-final_score")
+        )
+        for i, pebp in enumerate(unselected_pebps, start=len(selected_pebps) + 1):
+            pebp.rank = i
+            pebp.is_chosen = False
+            updates.append(pebp)
+
+        PlanningEventBusinessProblem.objects.bulk_update(updates, ["rank", "is_chosen"])
+
+        # Create or update PlanningEventStrategy
+        create_strategies = Strategy.objects.filter(
+            business_problems__in=[x.business_problem for x in selected_pebps]
+        )
+        delete_strategies = PlanningEventStrategy.objects.filter(planning_event=planning_event).exclude(strategy__in=create_strategies)
+        for strategy in create_strategies:
+            try:
+                obj = PlanningEventStrategy.objects.get(planning_event=planning_event, strategy=strategy)
+            except PlanningEventStrategy.DoesNotExist:
+                obj = PlanningEventStrategy.objects.create(planning_event=planning_event, strategy=strategy)
+
+        delete_strategies.delete()
+
+        ret = {"is_success": True, "msg": ""}
+
+    except Exception as e:
+        ret = {
+            "is_success": False,
+            "msg": f"Something went wrong choosing those business problems. {e}",
+        }
+
+    return JsonResponse(ret)
+
+
+@logged_in_user
+@require_http_methods(["GET", "POST"])
+def planning_event_strategy_score(request, planning_event_id):
+    # Fetch the relevant Planning Event
+    planning_event = get_object_or_404(
+        PlanningEvent, id=planning_event_id, organization=request.user.organization
+    )
+
+    # Fetch all CriterionWeights and PlanningEventStrategies related to the event
+    criterion_weights = CriterionWeight.objects.filter(planning_event=planning_event)
+    planning_event_strategy = PlanningEventStrategy.objects.filter(
+        planning_event=planning_event
+    )
+
+    # Prepare a dictionary of existing scores for easier lookup
+    existing_scores = StrategyScore.objects.filter(
+        planning_event_strategy__in=planning_event_strategy,
+        scoring_user=request.user,
+    )
+
+    # Create a dictionary to easily retrieve existing scores by (PES ID, CriterionWeight ID)
+    existing_scores_dict = {
+        (score.planning_event_strategy_id, score.criterion_weight_id): score
+        for score in existing_scores
+    }
+
+    if request.method == "POST":
+        new_scores = []
+        updated_scores = []
+
+        # Start atomic transaction for saving
+        try:
+            with transaction.atomic():
+                # Loop through all Business Problems and Criterion Weights
+                for pes in planning_event_strategy:
+                    for criterion_weight in criterion_weights:
+                        # Construct the input name for the corresponding score
+                        input_name = f"score_{pes.id}_{criterion_weight.id}"
+                        score_value = request.POST.get(input_name)
+
+                        if score_value:
+                            score_value = int(score_value)
+                            if 1 <= score_value <= 10:
+                                # Check if the score already exists
+                                existing_score = existing_scores_dict.get(
+                                    (pes.id, criterion_weight.id)
+                                )
+
+                                if existing_score:
+                                    # If the score exists, check if it needs updating
+                                    if existing_score.score != score_value:
+                                        existing_score.score = score_value
+                                        updated_scores.append(existing_score)
+                                else:
+                                    # If the score does not exist, create a new one
+                                    new_scores.append(
+                                        StrategyScore(
+                                            planning_event_strategy=pes,
+                                            criterion_weight=criterion_weight,
+                                            scoring_user=request.user,
+                                            score=score_value,
+                                        )
+                                    )
+
+                # Bulk create new scores
+                if new_scores:
+                    StrategyScore.objects.bulk_create(new_scores)
+
+                # Bulk update existing scores
+                if updated_scores:
+                    StrategyScore.objects.bulk_update(updated_scores, ["score"])
+
+                final_score_updates = []
+                for pes in planning_event_strategy:
+                    pes.final_score = pes.get_calculated_score()
+                    final_score_updates.append(pes)
+
+                PlanningEventStrategy.objects.bulk_update(
+                    final_score_updates, ["final_score"]
+                )
+
+        except Exception as e:
+            print(f"Error saving scores: {e}")
+
+        return redirect(
+            "strategy:planning_event_strategy_score",
+            planning_event_id=planning_event_id,
+        )
+
+    # Pass data to template
+    context = {
+        "planning_event": planning_event,
+        "criterion_weights": criterion_weights,
+        "planning_event_strategy": planning_event_strategy,
+        "scores_dict": existing_scores_dict,  # For displaying scores
+    }
+
+    return render(request, "strategy/planning_event_strategy.html", context)
+
+
+@logged_in_user
+@require_POST
+def planning_event_strategy_choose(request, planning_event_id):
+    selected_ids = request.POST.getlist("selected_ids[]")
+    updates = []
+    try:
+        # Update PlanningEventStrategies
+        planning_event = PlanningEvent.objects.get(
+            pk=planning_event_id, organization=request.user.organization
+        )
+        selected_strategies = PlanningEventStrategy.objects.filter(
+            id__in=selected_ids, planning_event=planning_event
+        ).order_by("-final_score")
+        for i, pes in enumerate(selected_strategies, start=1):
+            pes.rank = i
+            pes.is_chosen = True
+            updates.append(pes)
+
+        unselected_strategies = (
+            PlanningEventStrategy.objects.filter(planning_event=planning_event)
+            .exclude(id__in=selected_ids)
+            .order_by("-final_score")
+        )
+        for i, pes in enumerate(unselected_strategies, start=len(selected_strategies) + 1):
+            pes.rank = i
+            pes.is_chosen = False
+            updates.append(pes)
+
+        PlanningEventStrategy.objects.bulk_update(updates, ["rank", "is_chosen"])
+
+        # Create or update PlanningEventProject
+        create_project = Project.objects.filter(
+            strategy__in=[x.strategy for x in selected_strategies]
+        )
+        delete_project = PlanningEventProject.objects.filter(planning_event=planning_event).exclude(project__in=create_project)
+        for project in create_project:
+            try:
+                obj = PlanningEventProject.objects.get(planning_event=planning_event, project=project)
+            except PlanningEventProject.DoesNotExist:
+                obj = PlanningEventProject.objects.create(planning_event=planning_event, project=project)
+
+        delete_project.delete()
+
+        ret = {"is_success": True, "msg": ""}
+
+    except Exception as e:
+        ret = {
+            "is_success": False,
+            "msg": f"Something went wrong choosing those strategies. {e}",
+        }
+
+    return JsonResponse(ret)
+
+
+@logged_in_user
+@require_http_methods(["GET", "POST"])
+def planning_event_project_score(request, planning_event_id):
+    # Fetch the relevant Planning Event
+    planning_event = get_object_or_404(
+        PlanningEvent, id=planning_event_id, organization=request.user.organization
+    )
+
+    # Fetch all CriterionWeights and PlanningEventProjects related to the event
+    criterion_weights = CriterionWeight.objects.filter(planning_event=planning_event)
+    planning_event_project = PlanningEventProject.objects.filter(
+        planning_event=planning_event
+    )
+
+    # Prepare a dictionary of existing scores for easier lookup
+    existing_scores = ProjectScore.objects.filter(
+        planning_event_project__in=planning_event_project,
+        scoring_user=request.user,
+    )
+
+    # Create a dictionary to easily retrieve existing scores by (PES ID, CriterionWeight ID)
+    existing_scores_dict = {
+        (score.planning_event_project_id, score.criterion_weight_id): score
+        for score in existing_scores
+    }
+
+    if request.method == "POST":
+        new_scores = []
+        updated_scores = []
+
+        # Start atomic transaction for saving
+        try:
+            with transaction.atomic():
+                # Loop through all Business Problems and Criterion Weights
+                for pep in planning_event_project:
+                    for criterion_weight in criterion_weights:
+                        # Construct the input name for the corresponding score
+                        input_name = f"score_{pep.id}_{criterion_weight.id}"
+                        score_value = request.POST.get(input_name)
+
+                        if score_value:
+                            score_value = int(score_value)
+                            if 1 <= score_value <= 10:
+                                # Check if the score already exists
+                                existing_score = existing_scores_dict.get(
+                                    (pep.id, criterion_weight.id)
+                                )
+
+                                if existing_score:
+                                    # If the score exists, check if it needs updating
+                                    if existing_score.score != score_value:
+                                        existing_score.score = score_value
+                                        updated_scores.append(existing_score)
+                                else:
+                                    # If the score does not exist, create a new one
+                                    new_scores.append(
+                                        ProjectScore(
+                                            planning_event_project=pep,
+                                            criterion_weight=criterion_weight,
+                                            scoring_user=request.user,
+                                            score=score_value,
+                                        )
+                                    )
+
+                # Bulk create new scores
+                if new_scores:
+                    ProjectScore.objects.bulk_create(new_scores)
+
+                # Bulk update existing scores
+                if updated_scores:
+                    ProjectScore.objects.bulk_update(updated_scores, ["score"])
+
+                final_score_updates = []
+                for pep in planning_event_project:
+                    pep.final_score = pep.get_calculated_score()
+                    final_score_updates.append(pep)
+
+                PlanningEventProject.objects.bulk_update(
+                    final_score_updates, ["final_score"]
+                )
+
+        except Exception as e:
+            print(f"Error saving scores: {e}")
+
+        return redirect(
+            "strategy:planning_event_project_score",
+            planning_event_id=planning_event_id,
+        )
+
+    # Pass data to template
+    context = {
+        "planning_event": planning_event,
+        "criterion_weights": criterion_weights,
+        "planning_event_project": planning_event_project,
+        "scores_dict": existing_scores_dict,  # For displaying scores
+    }
+
+    return render(request, "strategy/planning_event_project.html", context)
+
+
+@logged_in_user
+@require_POST
+def planning_event_project_choose(request, planning_event_id):
+    selected_ids = request.POST.getlist("selected_ids[]")
+    updates = []
+    try:
+        # Update PlanningEventProjects
+        planning_event = PlanningEvent.objects.get(
+            pk=planning_event_id, organization=request.user.organization
+        )
+        selected_projects = PlanningEventProject.objects.filter(
+            id__in=selected_ids, planning_event=planning_event
+        ).order_by("-final_score")
+        for i, pebp in enumerate(selected_projects, start=1):
+            pebp.rank = i
+            pebp.is_chosen = True
+            updates.append(pebp)
+
+        unselected_projects = (
+            PlanningEventProject.objects.filter(planning_event=planning_event)
+            .exclude(id__in=selected_ids)
+            .order_by("-final_score")
+        )
+        for i, pebp in enumerate(unselected_projects, start=len(selected_projects) + 1):
+            pebp.rank = i
+            pebp.is_chosen = False
+            updates.append(pebp)
+
+        PlanningEventProject.objects.bulk_update(updates, ["rank", "is_chosen"])
+
+        ret = {"is_success": True, "msg": ""}
+
+    except Exception as e:
+        ret = {
+            "is_success": False,
+            "msg": f"Something went wrong choosing those strategies. {e}",
+        }
+
+    return JsonResponse(ret)

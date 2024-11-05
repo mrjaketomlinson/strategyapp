@@ -96,20 +96,32 @@
   </div>
 
   <div class="mt-2">
-    <div class="d-flex justify-content-between">
+    <div class="d-flex justify-content-between mb-2">
       <h3>Business Problems</h3>
-      <button type="button" onclick="associateBusinessProblem(this)" id="add-business-problem-btn" class="btn"
-        data-url="{% url 'strategy:planning_event_business_problem_associate' planning_event_id=event.pk %}"
-        data-bs-toggle="modal" data-bs-target="#modal">
-        <span class="material-symbols-outlined primary-hover">
-          add
-        </span>
-      </button>
+      <div class="d-flex justify-content-between">
+        <button type="button" onclick="associateBusinessProblem(this)" id="add-business-problem-btn" class="btn"
+          data-url="{% url 'strategy:planning_event_business_problem_associate' planning_event_id=event.pk %}"
+          data-bs-toggle="modal" data-bs-target="#modal">
+          <span class="material-symbols-outlined primary-hover" data-bs-toggle="tooltip" data-bs-title="Add" data-bs-placement="bottom">
+            add
+          </span>
+        </button>
+        <a href="{% url 'strategy:planning_event_business_problem_score' planning_event_id=event.pk %}"
+          class="btn" data-bs-toggle="tooltip" data-bs-title="Score" data-bs-placement="bottom">
+          <span class="material-symbols-outlined">reviews</span>
+        </a>
+        <button id="bp-select-button" type="button" class="btn" data-bs-toggle="tooltip" data-bs-title="Choose" data-bs-placement="bottom">
+          <span class="material-symbols-outlined">check_circle</span>
+        </button>
+        <button id="bp-cancel-button" type="button" class="btn btn-secondary ms-2" style="display: none;">Cancel</button>
+        <button id="bp-save-button" type="button" class="btn btn-primary ms-2" style="display: none;">Save</button>
+      </div>
     </div>
     <div id="businessProblemList">
       <table class="table table-striped table-bordered">
         <thead class="thead-dark">
           <tr>
+            <th style="display: none;" id="bp-checkbox-header">Select</th>
             <th scope="col">Rank</th>
             <th scope="col">Summary</th>
             <th scope="col">Weighted Score</th>
@@ -119,9 +131,17 @@
         <tbody id="sortable-rows">
           {% for b in business_problems %}
           <tr id="peba-{{b.pk}}" data-id="{{ b.pk }}">
+            <td style="display: none;" class="bp-checkbox-column">
+              <input type="checkbox" class="bp-checkbox" name="selected_ids[]" value="{{ b.pk }}" {% if b.is_chosen %}checked{% endif %} >
+            </td>
             <td class="rank">{{ b.rank|default_if_none:forloop.counter }}</td>
             <td class="businessProblem{{b.business_problem.pk}}-summary">{{ b.business_problem.summary }}</td>
-            <td>{{ b.final_score|floatformat:"-2" }}</td>
+            <td>
+              {{ b.final_score|floatformat:"-2" }}
+              {% if b.is_chosen %}
+                <span class="text-success">&#10003;</span>
+              {% endif %}
+            </td>
             <td>
               <form class="planning-event-business-problem-del-form"
                 action="{% url 'strategy:planning_event_business_problem_delete' planning_event_id=event.pk business_problem_id=b.business_problem.pk %}"
@@ -146,12 +166,109 @@
   </div>
 
   <div class="mt-2">
-    <!-- TODO: Only show this button if you're a part of the people that should be doing any scoring -->
-    <a href="{% url 'strategy:planning_event_business_problem_score' planning_event_id=event.pk %}"
-      class="btn btn-primary d-flex justify-content-center">Prioritize Business Problems</a>
+    <div class="d-flex justify-content-between mb-2">
+      <h3>Strategies</h3>
+      {% if strategies %}
+      <div class="d-flex justify-content-between">
+        <a href="{% url 'strategy:planning_event_strategy_score' planning_event_id=event.pk %}"
+          class="btn" data-bs-toggle="tooltip" data-bs-title="Score" data-bs-placement="bottom">
+          <span class="material-symbols-outlined">reviews</span>
+        </a>
+        <button id="strategy-select-button" type="button" class="btn" data-bs-toggle="tooltip" data-bs-title="Choose" data-bs-placement="bottom">
+          <span class="material-symbols-outlined">check_circle</span>
+        </button>
+        <button id="strategy-cancel-button" type="button" class="btn btn-secondary ms-2" style="display: none;">Cancel</button>
+        <button id="strategy-save-button" type="button" class="btn btn-primary ms-2" style="display: none;">Save</button>
+      </div>
+      {% endif %}
+    </div>
+    <div id="strategyList">
+      <table class="table table-striped table-bordered">
+        <thead class="thead-dark">
+          <tr>
+            <th style="display: none;" id="s-checkbox-header">Select</th>
+            <th scope="col">Rank</th>
+            <th scope="col">Summary</th>
+            <th scope="col">Weighted Score</th>
+          </tr>
+        </thead>
+        <tbody id="sortable-rows">
+          {% for s in strategies %}
+          <tr id="s-{{s.pk}}" data-id="{{ s.pk }}">
+            <td style="display: none;" class="strategy-checkbox-column">
+              <input type="checkbox" class="strategy-checkbox" name="selected_ids[]" value="{{ s.pk }}" {% if s.is_chosen %}checked{% endif %} >
+            </td>
+            <td class="rank">{{ s.rank|default_if_none:forloop.counter }}</td>
+            <td class="strategy{{s.strategy.pk}}-summary">{{ s.strategy.summary }}</td>
+            <td>
+              {{ s.final_score|floatformat:"-2" }}
+              {% if s.is_chosen %}
+                <span class="text-success">&#10003;</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="3" class="text-center">No data available. Strategies will show up based on chosen business problems.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </div>
-  <!-- TODO: If there are any scores, shows the aggregated scores with the business problems -->
-  <!-- TODO: Should have a button to drill into details, but should only show the ordered list on this page. -->
+
+  <div class="mt-2">
+    <div class="d-flex justify-content-between mb-2">
+      <h3>Projects</h3>
+      {% if projects %}
+      <div class="d-flex justify-content-between">
+        <a href="{% url 'strategy:planning_event_project_score' planning_event_id=event.pk %}"
+          class="btn" data-bs-toggle="tooltip" data-bs-title="Score" data-bs-placement="bottom">
+          <span class="material-symbols-outlined">reviews</span>
+        </a>
+        <button id="project-select-button" type="button" class="btn" data-bs-toggle="tooltip" data-bs-title="Choose" data-bs-placement="bottom">
+          <span class="material-symbols-outlined">check_circle</span>
+        </button>
+        <button id="project-cancel-button" type="button" class="btn btn-secondary ms-2" style="display: none;">Cancel</button>
+        <button id="project-save-button" type="button" class="btn btn-primary ms-2" style="display: none;">Save</button>
+      </div>
+      {% endif %}
+    </div>
+    <div id="projectList">
+      <table class="table table-striped table-bordered">
+        <thead class="thead-dark">
+          <tr>
+            <th style="display: none;" id="s-checkbox-header">Select</th>
+            <th scope="col">Rank</th>
+            <th scope="col">Summary</th>
+            <th scope="col">Weighted Score</th>
+          </tr>
+        </thead>
+        <tbody id="sortable-rows">
+          {% for p in projects %}
+          <tr id="p-{{p.pk}}" data-id="{{ p.pk }}">
+            <td style="display: none;" class="project-checkbox-column">
+              <input type="checkbox" class="project-checkbox" name="selected_ids[]" value="{{ p.pk }}" {% if p.is_chosen %}checked{% endif %} >
+            </td>
+            <td class="rank">{{ p.rank|default_if_none:forloop.counter }}</td>
+            <td class="project{{p.project.pk}}-summary">{{ p.project.summary }}</td>
+            <td>
+              {{ p.final_score|floatformat:"-2" }}
+              {% if p.is_chosen %}
+                <span class="text-success">&#10003;</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="3" class="text-center">No data available. Projects will show up based on chosen strategies.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  
 </div>
 
 <form id="criterion-weight-del-template" class="criterion-weight-del-form d-none" action="" method="post">
@@ -409,38 +526,179 @@
     $(".criterion-weight-del-form").on("submit", deleteCriterion);
     $(".planning-event-business-problem-del-form").on("submit", deletePlanningEventBusinessProblem);
 
+    // Make business problems sortable
     var sortable = new Sortable(document.getElementById('sortable-rows'), {
       animation: 150,
       onEnd: function (evt) {
         // Capture the new order of rows
-        var new_order = [];
-        $('#sortable-rows tr').each(function () {
-          new_order.push($(this).data('id'));
-        });
-        // Send the new order to the server via AJAX
-        $.ajax({
-          type: 'POST',
-          url: "{% url 'strategy:planning_event_business_problem_set_rank' planning_event_id=event.pk %}",
-          data: {
-            'new_order[]': new_order,
-            'csrfmiddlewaretoken': '{{ csrf_token }}'
-          },
-          success: function (response) {
-            if (response.is_success) {
-              $.each(response.order, function(key, value) {
-                $(`#peba-${key} .rank`).text(value);
-              });
-            } else {
+        if (evt.oldIndex != evt.newIndex) {
+          var new_order = [];
+          $('#sortable-rows tr').each(function () {
+            new_order.push($(this).data('id'));
+          });
+          // Send the new order to the server via AJAX
+          $.ajax({
+            type: 'POST',
+            url: "{% url 'strategy:planning_event_business_problem_set_rank' planning_event_id=event.pk %}",
+            data: {
+              'new_order[]': new_order,
+              'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            success: function (response) {
+              if (response.is_success) {
+                $.each(response.order, function(key, value) {
+                  $(`#peba-${key} .rank`).text(value);
+                });
+              } else {
+                // TODO: Proper error handling
+                console.error(response);
+              }
+            },
+            error: function (response) {
               // TODO: Proper error handling
-              console.error(response);
+              console.error('An error occurred:', response);
             }
-          },
-          error: function (response) {
-            // TODO: Proper error handling
-            console.error('An error occurred:', response);
-          }
-        });
+          });
+        }
       }
+    });
+
+    // Show checkboxes on "Select" button click for business problems
+    $('#bp-select-button').click(function () {
+      $('.bp-checkbox-column, #bp-checkbox-header').show();
+      $('#bp-save-button').show();
+      $("#bp-cancel-button").show();
+      $(this).hide();
+    });
+
+    // Hide buttons if cancelling select
+    $("#bp-cancel-button").click(function() {
+      $('#bp-save-button').hide();
+      $('.bp-checkbox-column, #bp-checkbox-header').hide();
+      $(this).hide();
+      $('#bp-select-button').show();
+    });
+
+    // Submit selected rows on "Save" button click
+    $('#bp-save-button').click(function () {
+      // Gather IDs of selected rows
+      var selected_ids = [];
+      $('.bp-checkbox:checked').each(function () {
+        selected_ids.push($(this).val());
+      });
+      // Send selected IDs to the server via AJAX
+      $.ajax({
+        type: 'POST',
+        url: '{% url "strategy:planning_event_business_problem_choose" planning_event_id=event.pk %}',
+        data: {
+          'selected_ids[]': selected_ids,
+          'csrfmiddlewaretoken': '{{ csrf_token }}'
+        },
+        success: function (response) {
+          if (response.is_success) {
+            // Reload the page or handle success (e.g., show a message)
+            window.location.reload();
+          } else {
+            // TODO: Proper error handling
+            console.error(response.msg);
+          }
+        },
+        error: function (response) {
+          console.error('An error occurred:', response);
+        }
+      });
+    });
+
+    // Show checkboxes on "Select" button click for strategy
+    $('#strategy-select-button').click(function () {
+      $('.strategy-checkbox-column, #strategy-checkbox-header').show();
+      $('#strategy-save-button').show();
+      $("#strategy-cancel-button").show();
+      $(this).hide();
+    });
+
+    // Hide buttons if cancelling select
+    $("#strategy-cancel-button").click(function() {
+      $('#strategy-save-button').hide();
+      $('.strategy-checkbox-column, #strategy-checkbox-header').hide();
+      $(this).hide();
+      $('#strategy-select-button').show();
+    });
+
+    // Submit selected rows on "Save" button click
+    $('#strategy-save-button').click(function () {
+      // Gather IDs of selected rows
+      var selected_ids = [];
+      $('.strategy-checkbox:checked').each(function () {
+        selected_ids.push($(this).val());
+      });
+      // Send selected IDs to the server via AJAX
+      $.ajax({
+        type: 'POST',
+        url: '{% url "strategy:planning_event_strategy_choose" planning_event_id=event.pk %}',
+        data: {
+          'selected_ids[]': selected_ids,
+          'csrfmiddlewaretoken': '{{ csrf_token }}'
+        },
+        success: function (response) {
+          if (response.is_success) {
+            // Reload the page or handle success (e.g., show a message)
+            window.location.reload();
+          } else {
+            // TODO: Proper error handling
+            console.error(response.msg);
+          }
+        },
+        error: function (response) {
+          console.error('An error occurred:', response);
+        }
+      });
+    });
+
+    // Show checkboxes on "Select" button click for project
+    $('#project-select-button').click(function () {
+      $('.project-checkbox-column, #project-checkbox-header').show();
+      $('#project-save-button').show();
+      $("#project-cancel-button").show();
+      $(this).hide();
+    });
+
+    // Hide buttons if cancelling select
+    $("#project-cancel-button").click(function() {
+      $('#project-save-button').hide();
+      $('.project-checkbox-column, #project-checkbox-header').hide();
+      $(this).hide();
+      $('#project-select-button').show();
+    });
+
+    // Submit selected rows on "Save" button click
+    $('#project-save-button').click(function () {
+      // Gather IDs of selected rows
+      var selected_ids = [];
+      $('.project-checkbox:checked').each(function () {
+        selected_ids.push($(this).val());
+      });
+      // Send selected IDs to the server via AJAX
+      $.ajax({
+        type: 'POST',
+        url: '{% url "strategy:planning_event_project_choose" planning_event_id=event.pk %}',
+        data: {
+          'selected_ids[]': selected_ids,
+          'csrfmiddlewaretoken': '{{ csrf_token }}'
+        },
+        success: function (response) {
+          if (response.is_success) {
+            // Reload the page or handle success (e.g., show a message)
+            window.location.reload();
+          } else {
+            // TODO: Proper error handling
+            console.error(response.msg);
+          }
+        },
+        error: function (response) {
+          console.error('An error occurred:', response);
+        }
+      });
     });
   });
 </script>

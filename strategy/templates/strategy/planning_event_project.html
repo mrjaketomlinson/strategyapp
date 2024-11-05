@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% load strategy_tags %}
+
+{% block title %}Project Scoring{% endblock %}
+
+{% block body %}
+
+<div class="container">
+  <h1>{{ planning_event.name }}</h1>
+  <form method="POST">
+    {% csrf_token %}
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Project</th>
+            {% for criterion_weight in criterion_weights %}
+              <th>{{ criterion_weight.criterion.name }} (Weight: {{ criterion_weight.weight }})</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for pep in planning_event_project %}
+            <tr>
+              <td>{{ pep.project.summary }}</td>
+                {% for criterion_weight in criterion_weights %}
+                  <td>
+                    {% get_score scores_dict pep.id criterion_weight.id as score %}
+                    <input class="form-control" type="number" name="score_{{ pep.id }}_{{ criterion_weight.id }}"
+                      value="{{ score.score }}" min="1" max="10">
+                  </td>
+                {% endfor %}
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="d-flex">
+      <a href="{% url 'strategy:planning_event_detail' planning_event_id=planning_event.id %}" class="btn btn-outline-secondary me-2">Go back</a>
+      <button type="submit" class="btn btn-outline-primary">Save Scores</button>
+    </div>
+  </form>
+</div>
+
+{% endblock %}

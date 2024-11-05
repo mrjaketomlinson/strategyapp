@@ -209,8 +209,8 @@ class PlanningEventStrategy(models.Model):
     planning_event = models.ForeignKey(PlanningEvent, on_delete=models.CASCADE)
     strategy = models.ForeignKey(Strategy, on_delete=models.CASCADE)
     is_chosen = models.BooleanField(default=False)
-    override_score = models.PositiveIntegerField(null=True)
-    final_score = models.PositiveIntegerField(null=True)
+    rank = models.PositiveIntegerField(null=True)
+    final_score = models.FloatField(null=True)
 
     class Meta:
         unique_together = ["planning_event", "strategy"]
@@ -229,10 +229,6 @@ class PlanningEventStrategy(models.Model):
         """
         Override save method to update final score whenever the object is saved.
         """
-        if not self.override_score:
-            self.final_score = self.get_calculated_score()
-        else:
-            self.final_score = self.override_score
         super().save(*args, **kwargs)
 
 
@@ -240,8 +236,8 @@ class PlanningEventProject(models.Model):
     planning_event = models.ForeignKey(PlanningEvent, on_delete=models.CASCADE)
     project = models.ForeignKey("project.Project", on_delete=models.CASCADE)
     is_chosen = models.BooleanField(default=False)
-    override_score = models.PositiveIntegerField(null=True)
-    final_score = models.PositiveIntegerField(null=True)
+    rank = models.PositiveIntegerField(null=True)
+    final_score = models.FloatField(null=True)
 
     class Meta:
         unique_together = ["planning_event", "project"]
@@ -260,10 +256,6 @@ class PlanningEventProject(models.Model):
         """
         Override save method to update final score whenever the object is saved.
         """
-        if not self.override_score:
-            self.final_score = self.get_calculated_score()
-        else:
-            self.final_score = self.override_score
         super().save(*args, **kwargs)
 
 
