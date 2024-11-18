@@ -188,7 +188,7 @@ class PlanningEventBusinessProblem(models.Model):
         unique_together = ["planning_event", "business_problem"]
 
     def get_calculated_score(self):
-        calculated_score = None
+        calculated_score = 0
         try:
             weighted_scores = [x.weighted_score() for x in self.scores.all()]
         except ValueError:
@@ -196,7 +196,7 @@ class PlanningEventBusinessProblem(models.Model):
         if weighted_scores:
             calculated_score = statistics.fmean(weighted_scores)
         return calculated_score
-    
+
     def save(self, *args, **kwargs):
         """
         Override save method to update final score whenever the object is saved.
@@ -216,7 +216,7 @@ class PlanningEventStrategy(models.Model):
         unique_together = ["planning_event", "strategy"]
 
     def get_calculated_score(self):
-        calculated_score = None
+        calculated_score = 0
         try:
             weighted_scores = [x.weighted_score() for x in self.scores.all()]
         except ValueError:
@@ -243,11 +243,11 @@ class PlanningEventProject(models.Model):
         unique_together = ["planning_event", "project"]
 
     def get_calculated_score(self):
-        calculated_score = None
+        calculated_score = 0
         try:
             weighted_scores = [x.weighted_score() for x in self.scores.all()]
         except ValueError:
-            weighted_scores = []        
+            weighted_scores = []
         if weighted_scores:
             calculated_score = statistics.fmean(weighted_scores)
         return calculated_score
@@ -260,24 +260,37 @@ class PlanningEventProject(models.Model):
 
 
 class BusinessProblemScore(models.Model):
-    planning_event_business_problem = models.ForeignKey(PlanningEventBusinessProblem, on_delete=models.CASCADE, related_name='scores')
+    planning_event_business_problem = models.ForeignKey(
+        PlanningEventBusinessProblem, on_delete=models.CASCADE, related_name="scores"
+    )
     criterion_weight = models.ForeignKey(CriterionWeight, on_delete=models.CASCADE)
-    scoring_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING)
+    scoring_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING
+    )
     score = models.PositiveIntegerField(
         validators=[MinValueValidator(1), MaxValueValidator(10)]
     )
 
     def weighted_score(self):
-        return self.score * self.criterion_weight.weight
+        score = (
+            self.score
+            if self.criterion_weight.criterion.criterion_type == "max"
+            else 10 - self.score
+        )
+        return score * self.criterion_weight.weight
 
     def __str__(self):
         return f"{self.planning_event_business_problem.pk} - {self.criterion_weight.criterion.name}: {self.score}"
 
 
 class StrategyScore(models.Model):
-    planning_event_strategy = models.ForeignKey(PlanningEventStrategy, on_delete=models.CASCADE, related_name='scores')
+    planning_event_strategy = models.ForeignKey(
+        PlanningEventStrategy, on_delete=models.CASCADE, related_name="scores"
+    )
     criterion_weight = models.ForeignKey(CriterionWeight, on_delete=models.CASCADE)
-    scoring_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING)
+    scoring_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING
+    )
     score = models.PositiveIntegerField(
         validators=[MinValueValidator(1), MaxValueValidator(10)]
     )
@@ -287,12 +300,16 @@ class StrategyScore(models.Model):
 
     def __str__(self):
         return f"{self.planning_event_strategy.pk} - {self.criterion_weight.criterion.name}: {self.score}"
-    
+
 
 class ProjectScore(models.Model):
-    planning_event_project = models.ForeignKey(PlanningEventProject, on_delete=models.CASCADE, related_name='scores')
+    planning_event_project = models.ForeignKey(
+        PlanningEventProject, on_delete=models.CASCADE, related_name="scores"
+    )
     criterion_weight = models.ForeignKey(CriterionWeight, on_delete=models.CASCADE)
-    scoring_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING)
+    scoring_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING
+    )
     score = models.PositiveIntegerField(
         validators=[MinValueValidator(1), MaxValueValidator(10)]
     )

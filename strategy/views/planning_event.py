@@ -29,7 +29,7 @@ from strategy.models import (
     PlanningEventStrategy,
     StrategyScore,
     PlanningEventProject,
-    ProjectScore
+    ProjectScore,
 )
 
 
@@ -100,7 +100,7 @@ def planning_event_detail(request, planning_event_id):
         "criteria": criteria,
         "business_problems": business_problems,
         "strategies": strategies,
-        "projects": projects
+        "projects": projects,
     }
     return render(request, "strategy/planning_event_detail.html", context)
 
@@ -454,6 +454,7 @@ def planning_event_business_problem_score(request, planning_event_id):
     if request.method == "POST":
         new_scores = []
         updated_scores = []
+        delete_scores = []
 
         # Start atomic transaction for saving
         try:
@@ -464,14 +465,14 @@ def planning_event_business_problem_score(request, planning_event_id):
                         # Construct the input name for the corresponding score
                         input_name = f"score_{pebp.id}_{criterion_weight.id}"
                         score_value = request.POST.get(input_name)
+                        # Check if the score already exists
+                        existing_score = existing_scores_dict.get(
+                            (pebp.id, criterion_weight.id)
+                        )
 
                         if score_value:
                             score_value = int(score_value)
                             if 1 <= score_value <= 10:
-                                # Check if the score already exists
-                                existing_score = existing_scores_dict.get(
-                                    (pebp.id, criterion_weight.id)
-                                )
 
                                 if existing_score:
                                     # If the score exists, check if it needs updating
@@ -488,6 +489,9 @@ def planning_event_business_problem_score(request, planning_event_id):
                                             score=score_value,
                                         )
                                     )
+                        else:
+                            if existing_score:
+                                delete_scores.append(existing_score)
 
                 # Bulk create new scores
                 if new_scores:
@@ -496,6 +500,12 @@ def planning_event_business_problem_score(request, planning_event_id):
                 # Bulk update existing scores
                 if updated_scores:
                     BusinessProblemScore.objects.bulk_update(updated_scores, ["score"])
+
+                # Delete null scores
+                if delete_scores:
+                    BusinessProblemScore.objects.filter(
+                        pk__in=[x.pk for x in delete_scores]
+                    ).delete()
 
                 final_score_updates = []
                 for pebp in planning_event_bps:
@@ -589,12 +599,18 @@ def planning_event_business_problem_choose(request, planning_event_id):
         create_strategies = Strategy.objects.filter(
             business_problems__in=[x.business_problem for x in selected_pebps]
         )
-        delete_strategies = PlanningEventStrategy.objects.filter(planning_event=planning_event).exclude(strategy__in=create_strategies)
+        delete_strategies = PlanningEventStrategy.objects.filter(
+            planning_event=planning_event
+        ).exclude(strategy__in=create_strategies)
         for strategy in create_strategies:
             try:
-                obj = PlanningEventStrategy.objects.get(planning_event=planning_event, strategy=strategy)
+                obj = PlanningEventStrategy.objects.get(
+                    planning_event=planning_event, strategy=strategy
+                )
             except PlanningEventStrategy.DoesNotExist:
-                obj = PlanningEventStrategy.objects.create(planning_event=planning_event, strategy=strategy)
+                obj = PlanningEventStrategy.objects.create(
+                    planning_event=planning_event, strategy=strategy
+                )
 
         delete_strategies.delete()
 
@@ -638,6 +654,7 @@ def planning_event_strategy_score(request, planning_event_id):
     if request.method == "POST":
         new_scores = []
         updated_scores = []
+        delete_scores = []
 
         # Start atomic transaction for saving
         try:
@@ -648,14 +665,14 @@ def planning_event_strategy_score(request, planning_event_id):
                         # Construct the input name for the corresponding score
                         input_name = f"score_{pes.id}_{criterion_weight.id}"
                         score_value = request.POST.get(input_name)
+                        # Check if the score already exists
+                        existing_score = existing_scores_dict.get(
+                            (pes.id, criterion_weight.id)
+                        )
 
                         if score_value:
                             score_value = int(score_value)
                             if 1 <= score_value <= 10:
-                                # Check if the score already exists
-                                existing_score = existing_scores_dict.get(
-                                    (pes.id, criterion_weight.id)
-                                )
 
                                 if existing_score:
                                     # If the score exists, check if it needs updating
@@ -672,6 +689,9 @@ def planning_event_strategy_score(request, planning_event_id):
                                             score=score_value,
                                         )
                                     )
+                        else:
+                            if existing_score:
+                                delete_scores.append(existing_score)
 
                 # Bulk create new scores
                 if new_scores:
@@ -680,6 +700,12 @@ def planning_event_strategy_score(request, planning_event_id):
                 # Bulk update existing scores
                 if updated_scores:
                     StrategyScore.objects.bulk_update(updated_scores, ["score"])
+                
+                # Delete null scores
+                if delete_scores:
+                    StrategyScore.objects.filter(
+                        pk__in=[x.pk for x in delete_scores]
+                    ).delete()
 
                 final_score_updates = []
                 for pes in planning_event_strategy:
@@ -732,7 +758,9 @@ def planning_event_strategy_choose(request, planning_event_id):
             .exclude(id__in=selected_ids)
             .order_by("-final_score")
         )
-        for i, pes in enumerate(unselected_strategies, start=len(selected_strategies) + 1):
+        for i, pes in enumerate(
+            unselected_strategies, start=len(selected_strategies) + 1
+        ):
             pes.rank = i
             pes.is_chosen = False
             updates.append(pes)
@@ -743,12 +771,18 @@ def planning_event_strategy_choose(request, planning_event_id):
         create_project = Project.objects.filter(
             strategy__in=[x.strategy for x in selected_strategies]
         )
-        delete_project = PlanningEventProject.objects.filter(planning_event=planning_event).exclude(project__in=create_project)
+        delete_project = PlanningEventProject.objects.filter(
+            planning_event=planning_event
+        ).exclude(project__in=create_project)
         for project in create_project:
             try:
-                obj = PlanningEventProject.objects.get(planning_event=planning_event, project=project)
+                obj = PlanningEventProject.objects.get(
+                    planning_event=planning_event, project=project
+                )
             except PlanningEventProject.DoesNotExist:
-                obj = PlanningEventProject.objects.create(planning_event=planning_event, project=project)
+                obj = PlanningEventProject.objects.create(
+                    planning_event=planning_event, project=project
+                )
 
         delete_project.delete()
 
@@ -792,6 +826,7 @@ def planning_event_project_score(request, planning_event_id):
     if request.method == "POST":
         new_scores = []
         updated_scores = []
+        delete_scores = []
 
         # Start atomic transaction for saving
         try:
@@ -802,14 +837,14 @@ def planning_event_project_score(request, planning_event_id):
                         # Construct the input name for the corresponding score
                         input_name = f"score_{pep.id}_{criterion_weight.id}"
                         score_value = request.POST.get(input_name)
+                        # Check if the score already exists
+                        existing_score = existing_scores_dict.get(
+                            (pep.id, criterion_weight.id)
+                        )
 
                         if score_value:
                             score_value = int(score_value)
                             if 1 <= score_value <= 10:
-                                # Check if the score already exists
-                                existing_score = existing_scores_dict.get(
-                                    (pep.id, criterion_weight.id)
-                                )
 
                                 if existing_score:
                                     # If the score exists, check if it needs updating
@@ -826,6 +861,9 @@ def planning_event_project_score(request, planning_event_id):
                                             score=score_value,
                                         )
                                     )
+                        else:
+                            if existing_score:
+                                delete_scores.append(existing_score)
 
                 # Bulk create new scores
                 if new_scores:
@@ -834,6 +872,12 @@ def planning_event_project_score(request, planning_event_id):
                 # Bulk update existing scores
                 if updated_scores:
                     ProjectScore.objects.bulk_update(updated_scores, ["score"])
+                
+                # Delete null scores
+                if delete_scores:
+                    ProjectScore.objects.filter(
+                        pk__in=[x.pk for x in delete_scores]
+                    ).delete()
 
                 final_score_updates = []
                 for pep in planning_event_project:
