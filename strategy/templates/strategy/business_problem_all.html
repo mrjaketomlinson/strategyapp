@@ -8,8 +8,8 @@
   <h1>Business Problems</h1>
   <div class="d-flex">
     <div class="flex-fill p-1">
-      <input class="form-control" type="text" id="searchInput" onkeyup="searchTable()"
-        placeholder="Search...">
+      <input class="form-control" type="text" id="searchInput" onkeyup="searchTable(this)"
+        placeholder="Search..." data-table="businessProblemsTable">
     </div>
     <div class="p-1">
       <a id="createBusinessProblemBtn" class="btn" href="{% url 'strategy:business_problem_create' %}">

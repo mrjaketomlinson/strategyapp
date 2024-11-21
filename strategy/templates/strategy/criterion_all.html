@@ -8,8 +8,8 @@
   <h1>Criteria</h1>
   <div class="d-flex">
     <div class="flex-fill p-1">
-      <input class="form-control" type="text" id="searchInput" onkeyup="searchTable()"
-        placeholder="Search...">
+      <input class="form-control" type="text" id="searchInput" onkeyup="searchTable(this)"
+        placeholder="Search..." data-table="criterionTable">
     </div>
     <div class="p-1">
       <button type="button" id="createCriteriaBtn" class="btn" data-bs-toggle="modal" data-bs-target="#modal" onclick="createCriterion(this)" data-url="{% url 'strategy:criterion_create' %}">

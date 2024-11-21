@@ -64,7 +64,6 @@ class Strategy(models.Model):
     time_period = models.ForeignKey(
         TimePeriod, on_delete=models.SET_NULL, null=True, blank=True
     )
-    # Voting mechanism
 
 
 class Assumption(models.Model):
