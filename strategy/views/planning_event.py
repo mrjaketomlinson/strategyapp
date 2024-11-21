@@ -55,7 +55,7 @@ def planning_event_create(request):
             messages.success(request, "Planning event created successfully!")
             return redirect(
                 "strategy:planning_event_detail",
-                kwargs={"planning_event_id": planning_event.pk},
+                planning_event_id=planning_event.pk,
             )
         else:
             for err, message in form.errors.items():
