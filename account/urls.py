@@ -20,4 +20,5 @@ urlpatterns = [
     path("accounts/period/all/", views.time_period_all, name="time_period_all"),
     path("accounts/period/create/", views.time_period_create, name="time_period_create"),
     path("accounts/period/<int:time_period_id>/edit/", views.time_period_edit, name="time_period_edit"),
+    path("accounts/period/<int:time_period_id>/", views.time_period_detail, name="time_period_detail"),
 ]

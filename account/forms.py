@@ -158,6 +158,7 @@ class TimePeriodCreateForm(forms.ModelForm):
             "created_by",
             "modified_by",
             "name",
+            "parent",
             "start_date",
             "end_date",
         ]
@@ -170,7 +171,12 @@ class TimePeriodCreateForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
+        self.request = kwargs.pop("request", None)
         super(TimePeriodCreateForm, self).__init__(*args, **kwargs)
+        if self.request:
+            self.fields["parent"].queryset = TimePeriod.objects.filter(
+                organization=self.request.user.organization
+            )
         for visible in self.visible_fields():
             add_classes(visible)
 
@@ -181,6 +187,7 @@ class TimePeriodEditForm(forms.ModelForm):
         fields = [
             "modified_by",
             "name",
+            "parent",
             "start_date",
             "end_date",
         ]
@@ -191,6 +198,14 @@ class TimePeriodEditForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
+        self.request = kwargs.pop("request", None)
         super(TimePeriodEditForm, self).__init__(*args, **kwargs)
+        if self.request:
+            self.fields["parent"].queryset = (
+                TimePeriod.objects.filter(organization=self.request.user.organization)
+                .exclude(pk=self.instance.pk)
+                .exclude(pk__in=[x.pk for x in self.instance.get_descendants()])
+            )
+        print(self.instance.name)
         for visible in self.visible_fields():
             add_classes(visible)

@@ -49,7 +49,7 @@ def time_period_create(request):
             "created_by": request.user,
             "modified_by": request.user,
         }
-        form = TimePeriodCreateForm(initial=initial)
+        form = TimePeriodCreateForm(initial=initial, request=request)
         context = {
             "body": render_to_string(
                 "base_form.html",
@@ -82,16 +82,21 @@ def time_period_edit(request, time_period_id):
                 messages.error(
                     request, f'Field: {err}. Message: {"; ".join(m for m in message)}'
                 )
-        return redirect("account:time_period_all")
+        return HttpResponseRedirect(request.META.get("HTTP_REFERER"))
     else:
         initial = {"modified_by": request.user}
-        form = TimePeriodEditForm(instance=time_period, initial=initial)
+        form = TimePeriodEditForm(
+            instance=time_period, initial=initial, request=request
+        )
         context = {
             "body": render_to_string(
                 "base_form.html",
                 {
                     "form": form,
-                    "url": reverse("account:time_period_edit", kwargs={"time_period_id": time_period_id}),
+                    "url": reverse(
+                        "account:time_period_edit",
+                        kwargs={"time_period_id": time_period_id},
+                    ),
                     "form_id": "time-period-edit-form",
                     "button": "Update",
                 },
@@ -100,3 +105,14 @@ def time_period_edit(request, time_period_id):
             "title": "Update time period",
         }
         return JsonResponse(context)
+
+
+@logged_in_user
+@require_GET
+def time_period_detail(request, time_period_id):
+    time_period = get_object_or_404(
+        TimePeriod, pk=time_period_id, organization=request.user.organization
+    )
+    hierarchy = time_period.get_hierarchy()
+    context = {"time_period": time_period, "hierarchy": hierarchy}
+    return render(request, "account/time_period_detail.html", context)

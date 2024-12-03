@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}{{ time_period.name }}{% endblock %}
+
+{% block body %}
+
+<div class="container">
+  <div class="d-flex justify-content-between">
+    <h1>{{ time_period }}</h1>
+    <button type="button" data-bs-toggle="modal" data-bs-target="#modal" onclick="editTimePeriod(this)" data-url="{% url 'account:time_period_edit' time_period_id=time_period.pk %}" class="btn primary-hover">
+      <span class="material-symbols-outlined">
+        edit
+      </span>
+    </button>
+  </div>
+  <hr>
+  <h2>Hierarchy</h2>
+  {% if time_period.parent %}
+    <p>Parent: <a href="{% url 'account:time_period_detail' time_period_id=time_period.pk %}">{{ time_period.parent.name }}</a></p> 
+  {% endif %}
+  <ul>
+    {% include "account/time_period_hierarchy_node.html" with node=hierarchy %}
+  </ul>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+
+<script type="text/javascript">
+  function editTimePeriod(identifier) {
+    $.ajax({
+      url: $(identifier).data("url"),
+      data: {},
+      dataType: "json",
+      success: function (data) {
+        $("#modal-title").html(data.title);
+        $("#modal-body").html(data.body);
+        if (data.footer) {
+          $("#modal-footer").html(data.footer);
+          $("#modal-footer").removeClass("d-none")
+        }
+      },
+      error: function (jqXHR, textStatus, errorThrown) {
+        alert("Something went wrong. If the issue persists, please reach out to the Bould team.");
+      }
+    });
+  }
+</script>
+
+{% endblock %}

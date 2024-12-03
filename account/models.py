@@ -199,6 +199,50 @@ class TimePeriod(models.Model):
     name = models.CharField(max_length=255)
     start_date = models.DateField()
     end_date = models.DateField()
+    parent = models.ForeignKey(
+        "self",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="children",
+    )
 
     def __str__(self):
         return f"{self.name} ({self.start_date} - {self.end_date})"
+
+    def get_hierarchy(self):
+        def build_tree(time_period):
+            children = time_period.children.all().order_by(
+                "start_date", "end_date", "name"
+            )
+            return {
+                "name": time_period.name,
+                "id": time_period.pk,
+                "children": [build_tree(child) for child in children],
+            }
+
+        return build_tree(self)
+
+    def get_ancestors(self):
+        ancestors = []
+        current = self.parent
+
+        while current:
+            ancestors.append(current)
+            current = current.parent
+
+        return ancestors
+
+    def get_descendants(self):
+        descendants = []
+
+        def fetch_children(time_period):
+            children = time_period.children.all().order_by(
+                "start_date", "end_date", "name"
+            )
+            for child in children:
+                descendants.append(child)
+                fetch_children(child)
+
+        fetch_children(self)
+        return descendants

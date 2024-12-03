@@ -30,9 +30,9 @@
     {% for period in time_periods %}
       <tr>
         <td>
-          <button type="button" id="editTimePeriodBtn" class="btn btn-link p-0" data-bs-toggle="modal" data-bs-target="#modal" onclick="editTimePeriod(this)" data-url="{% url 'account:time_period_edit' time_period_id=period.pk %}">
+          <a href="{% url 'account:time_period_detail' time_period_id=period.pk %}">
             {{ period.name }}
-          </button>
+          </a>
         </td>
         <td>{{ period.start_date }}</td>
         <td>{{ period.end_date }}</td>
