@@ -134,7 +134,7 @@ class User(AbstractBaseUser, PermissionsMixin):
             return ""
 
     def __str__(self):
-        return self.email
+        return f"{self.get_full_name()} ({self.email})"
 
 
 class Organization(models.Model):

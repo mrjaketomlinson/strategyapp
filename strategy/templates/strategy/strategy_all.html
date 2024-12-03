@@ -1,35 +1,37 @@
 {% extends "base.html" %}
 
-{% block title %}Projects{% endblock %}
+{% block title %}Strategies{% endblock %}
 
 {% block body %}
 
 <div class="container">
-  <h1>Projects</h1>
+  <h1>Strategies</h1>
   <div class="d-flex">
     <div class="flex-fill p-1">
       <input class="form-control" type="text" id="searchInput" onkeyup="searchTable(this)"
-        placeholder="Search..." data-table="projectTable">
+        placeholder="Search..." data-table="strategiesTable">
     </div>
+    {% comment %}
     <div class="p-1">
-      <a id="createProject" class="btn" href="{% url 'project:project_create' %}">
+      <a id="createStrategy" class="btn" href="{% url 'strategy:business_problem_create' %}">
         <span class="material-symbols-outlined">
           add
         </span>
       </a>
     </div>
+    {% endcomment %}
   </div>
-  <table id="projectTable" class="table table-hover table-responsive">
+  <table id="strategiesTable" class="table table-hover table-responsive">
     <thead>
       <tr>
         <th>Summary</th>
         <th>Create Date</th>
       </tr>
     </thead>
-    {% for project in projects %}
+    {% for strategy in strategies %}
       <tr>
-        <td><a href="{% url 'project:project_detail' project_id=project.pk %}">{{ project.summary }}</a></td>
-        <td>{{ project.create_date }}</td>
+        <td><a href="{% url 'strategy:strategy_detail' strategy_id=strategy.pk %}">{{ strategy.summary }}</a></td>
+        <td>{{ strategy.create_date }}</td>
       </tr>
     {% endfor %}
   </table>

@@ -2,12 +2,14 @@
 from django import forms
 
 # App
+from account.models import TimePeriod, User, Team
 from strategy.models import (
     PlanningEvent,
     CriterionWeight,
     BusinessProblemScore,
     PlanningEventBusinessProblem,
     BusinessProblem,
+    Criterion,
 )
 from utils.form_utils import add_classes
 
@@ -22,6 +24,8 @@ class PlanningEventCreateForm(forms.ModelForm):
             "name",
             "time_period",
             "score_type",
+            "scoring_user",
+            "scoring_team",
             "score_value_type",
         ]
         widgets = {
@@ -31,7 +35,18 @@ class PlanningEventCreateForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
+        self.request = kwargs.pop("request", None)
         super(PlanningEventCreateForm, self).__init__(*args, **kwargs)
+        if self.request:
+            self.fields["time_period"].queryset = TimePeriod.objects.filter(
+                organization=self.request.user.organization,
+            )
+            self.fields["scoring_user"].queryset = User.objects.filter(
+                organization=self.request.user.organization
+            )
+            self.fields["scoring_team"].queryset = Team.objects.filter(
+                organization=self.request.user.organization
+            )
         for visible in self.visible_fields():
             add_classes(visible)
 
@@ -51,7 +66,12 @@ class PlanningEventEditForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
+        self.request = kwargs.pop("request", None)
         super(PlanningEventEditForm, self).__init__(*args, **kwargs)
+        if self.request:
+            self.fields["time_period"].queryset = TimePeriod.objects.filter(
+                organization=self.request.user.organization,
+            )
         for visible in self.visible_fields():
             add_classes(visible)
 
@@ -73,7 +93,13 @@ class CriterionWeightCreateForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
+        self.request = kwargs.pop("request", None)
+        self.planning_event_id = kwargs.pop("planning_event_id", None)
         super(CriterionWeightCreateForm, self).__init__(*args, **kwargs)
+        if self.request:
+            self.fields["criterion"].queryset = Criterion.objects.filter(
+                organization=self.request.user.organization,
+            ).exclude(criterionweight__planning_event_id=self.planning_event_id)
         for visible in self.visible_fields():
             add_classes(visible)
 

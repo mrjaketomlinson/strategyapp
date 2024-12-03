@@ -26,10 +26,17 @@ def project_all(request):
 
 @logged_in_user
 @require_http_methods(["GET", "POST"])
-def project_create(request, strategy_id):
-    strategy = get_object_or_404(
-        Strategy, pk=strategy_id, organization=request.user.organization
-    )
+def project_create(request):
+    strategy_id = request.GET.get("strategy_id")
+    url = reverse("project:project_create")
+    if strategy_id:
+        strategy = get_object_or_404(
+            Strategy, pk=strategy_id, organization=request.user.organization
+        )
+        url += f"?strategy_id={strategy_id}"
+    else:
+        strategy = None
+    
     if request.method == "POST":
         form = ProjectCreateForm(request.POST, request=request)
         if form.is_valid():
@@ -48,15 +55,16 @@ def project_create(request, strategy_id):
         initial = {
             "organization": request.user.organization,
             "created_by": request.user,
-            "modified_by": request.user,
-            "strategy": strategy,
-            "teams": Team.objects.filter(businessproblem__in=strategy.business_problems.all()).distinct()
+            "modified_by": request.user
         }
+        if strategy:
+            initial["strategy"] = strategy
+            initial["teams"] = Team.objects.filter(businessproblem__in=strategy.business_problems.all()).distinct()
         form = ProjectCreateForm(initial=initial, request=request)
     context = {
         "form": form,
         "form_id": "project_create_form",
-        "url": reverse("project:project_create", kwargs={"strategy_id": strategy_id}),
+        "url": url,
         "button": "Create",
     }
     return render(request, "project/project_create.html", context)

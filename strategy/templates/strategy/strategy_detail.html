@@ -69,7 +69,7 @@
   <!-- Projects -->
   <div class="justify-content-between d-flex mt-4">
     <h5 class="">Projects</h5>
-    <a class="btn primary-hover" href="{% url 'project:project_create' strategy_id=strategy.pk %}">
+    <a class="btn primary-hover" href="{% url 'project:project_create' %}?strategy_id={{strategy.pk}}">
       <span class="material-symbols-outlined">
         add
       </span>

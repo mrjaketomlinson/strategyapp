@@ -14,6 +14,16 @@ from strategy.models import BusinessProblem, Strategy, Assumption
 
 
 @logged_in_user
+@require_GET
+def strategy_all(request):
+    strategies = Strategy.objects.filter(organization=request.user.organization)
+    context = {
+        "strategies": strategies,
+    }
+    return render(request, "strategy/strategy_all.html", context)
+
+
+@logged_in_user
 @require_http_methods(["GET", "POST"])
 def strategy_create(request):
     if request.method == "POST":
@@ -166,7 +176,9 @@ def strategy_preview(request, strategy_id):
             pk=strategy_id, organization=request.user.organization
         )
         title = strategy.summary
-        body = render_to_string("strategy/strategy_preview.html", {"strategy": strategy})
+        body = render_to_string(
+            "strategy/strategy_preview.html", {"strategy": strategy}
+        )
         footer = f'<a class="btn btn-primary" href="{reverse("strategy:strategy_detail", kwargs={"strategy_id": strategy.pk})}">View</a>'
     except Strategy.DoesNotExist:
         is_success = False
@@ -179,4 +191,12 @@ def strategy_preview(request, strategy_id):
             f"strategy_preview Exception. user: {request.user}, strategy: {strategy_id}.",
             e,
         )
-    return JsonResponse({"is_success": is_success, "msg": msg, "title": title, "body": body, "footer": footer})
+    return JsonResponse(
+        {
+            "is_success": is_success,
+            "msg": msg,
+            "title": title,
+            "body": body,
+            "footer": footer,
+        }
+    )

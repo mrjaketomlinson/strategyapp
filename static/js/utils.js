@@ -10,3 +10,9 @@ function searchTable(identifier) {
     }
   });
 }
+
+function deleteInlineForm(identifier) {
+  const formId = $(identifier).data("formid")
+  const form = $(`#${formId}`);
+  form.remove();
+}

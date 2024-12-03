@@ -10,3 +10,38 @@
 </div>
 
 {% endblock %}
+
+{% block scripts %}
+
+<script type="text/javascript">
+  $(document).ready(function () {
+    $("#field_scoring_user").hide();
+    $("#field_scoring_team").hide();
+    // When score_type individual, show user, else team
+    $("#id_score_type").on("change", function() {
+      let scoreType = $(this).val();
+      if (scoreType == 'individual') {
+        $("#field_scoring_user").show();
+        $('#id_scoring_user').prop("required", true);
+        $("#field_scoring_team").hide();
+        $('#id_scoring_team').prop("required", false);
+        $("#field_scoring_team").val("");
+      } else if (scoreType == 'team') {
+        $("#field_scoring_user").hide();
+        $('#id_scoring_user').prop("required", false);
+        $("#field_scoring_user").val("");
+        $("#field_scoring_team").show();
+        $('#id_scoring_team').prop("required", true);
+      } else {
+        $("#field_scoring_user").hide();
+        $('#id_scoring_user').prop("required", false);
+        $("#field_scoring_user").val("");
+        $("#field_scoring_team").hide();
+        $('#id_scoring_team').prop("required", false);
+        $("#field_scoring_team").val("");
+      }
+    });
+  });
+</script>
+
+{% endblock %}

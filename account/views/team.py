@@ -193,7 +193,6 @@ def team_member_create(request, team_id):
                 request=request,
             )
         }
-        print(data["form"])
         return JsonResponse(data)
 
 

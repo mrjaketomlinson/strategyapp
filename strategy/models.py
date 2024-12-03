@@ -64,6 +64,11 @@ class Strategy(models.Model):
     time_period = models.ForeignKey(
         TimePeriod, on_delete=models.SET_NULL, null=True, blank=True
     )
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.DO_NOTHING,
+        related_name="strategy_owner",
+    )
 
 
 class Assumption(models.Model):
@@ -110,9 +115,11 @@ class PlanningEvent(models.Model):
         ),
     )
     scoring_user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True
     )
-    scoring_team = models.ForeignKey(Team, on_delete=models.SET_NULL, null=True)
+    scoring_team = models.ForeignKey(
+        Team, on_delete=models.SET_NULL, null=True, blank=True
+    )
     score_value_type = models.CharField(
         max_length=50,
         choices=(

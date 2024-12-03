@@ -4,7 +4,7 @@ from project import views
 
 urlpatterns = [
     path("", views.project_all, name="project_all"),
-    path("<int:strategy_id>/create/", views.project_create, name="project_create"),
+    path("create/", views.project_create, name="project_create"),
     path("<int:project_id>/", views.project_detail, name="project_detail"),
     path("<int:project_id>/edit/", views.project_edit, name="project_edit"),
     path("<int:project_id>/delete/", views.project_delete, name="project_delete"),

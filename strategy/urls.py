@@ -14,6 +14,7 @@ urlpatterns = [
     path("assumption/<int:business_problem_id>/", views.assumption_create, name="assumption_create"),
     path("assumption/<int:assumption_id>/delete/", views.assumption_delete, name="assumption_delete"),
     path("assumption/<int:assumption_id>/remove/<str:related_obj>/<int:obj_id>/", views.assumption_remove_relationship, name="assumption_remove_relationship"),
+    path("strategy/all/", views.strategy_all, name="strategy_all"),
     path("strategy/create/", views.strategy_create, name="strategy_create"),
     path("strategy/<int:strategy_id>/", views.strategy_detail, name="strategy_detail"),
     path("strategy/<int:strategy_id>/edit/", views.strategy_edit, name="strategy_edit"),
@@ -34,7 +35,9 @@ urlpatterns = [
     path("event/<int:planning_event_id>/problem/set-rank/", views.planning_event_business_problem_set_rank, name="planning_event_business_problem_set_rank"),
     path("event/<int:planning_event_id>/problem/choose/", views.planning_event_business_problem_choose, name="planning_event_business_problem_choose"),
     path("event/<int:planning_event_id>/score/strategy/", views.planning_event_strategy_score, name="planning_event_strategy_score"),
+    path("event/<int:planning_event_id>/strategy/set-rank/", views.planning_event_strategy_set_rank, name="planning_event_strategy_set_rank"),
     path("event/<int:planning_event_id>/strategy/choose/", views.planning_event_strategy_choose, name="planning_event_strategy_choose"),
     path("event/<int:planning_event_id>/score/project/", views.planning_event_project_score, name="planning_event_project_score"),
+    path("event/<int:planning_event_id>/project/set-rank/", views.planning_event_project_set_rank, name="planning_event_project_set_rank"),
     path("event/<int:planning_event_id>/project/choose/", views.planning_event_project_choose, name="planning_event_project_choose"),
 ]

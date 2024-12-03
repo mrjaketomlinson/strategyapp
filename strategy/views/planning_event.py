@@ -69,7 +69,7 @@ def planning_event_create(request):
             "created_by": request.user,
             "modified_by": request.user,
         }
-        form = PlanningEventCreateForm(initial=initial)
+        form = PlanningEventCreateForm(initial=initial, request=request)
         context = {
             "form": form,
             "url": reverse("strategy:planning_event_create"),
@@ -165,7 +165,8 @@ def planning_event_delete(request, planning_event_id):
 @require_http_methods(["GET", "POST"])
 def criterion_weight_create(request, planning_event_id):
     pk = None
-    action = ""
+    del_action = ""
+    edit_action = ""
     msg = ""
     is_success = False
     try:
@@ -182,7 +183,8 @@ def criterion_weight_create(request, planning_event_id):
             "is_success": is_success,
             "msg": msg,
             "pk": pk,
-            "action": action,
+            "del_action": del_action,
+            "edit_action": edit_action,
         }
         return JsonResponse(json_response)
 
@@ -195,8 +197,15 @@ def criterion_weight_create(request, planning_event_id):
                 is_success = True
                 pk = criterion_weight.pk
                 criterion_type = criterion_weight.criterion.get_criterion_type_display()
-                action = reverse(
+                del_action = reverse(
                     "strategy:criterion_weight_delete",
+                    kwargs={
+                        "planning_event_id": planning_event.pk,
+                        "criterion_weight_id": pk,
+                    },
+                )
+                edit_action = reverse(
+                    "strategy:criterion_weight_edit",
                     kwargs={
                         "planning_event_id": planning_event.pk,
                         "criterion_weight_id": pk,
@@ -224,7 +233,8 @@ def criterion_weight_create(request, planning_event_id):
             "is_success": is_success,
             "msg": msg,
             "pk": pk,
-            "action": action,
+            "del_action": del_action,
+            "edit_action": edit_action,
             "criterion_type": criterion_type,
         }
         return JsonResponse(json_response)
@@ -234,7 +244,9 @@ def criterion_weight_create(request, planning_event_id):
             "modified_by": request.user,
             "planning_event": planning_event,
         }
-        form = CriterionWeightCreateForm(initial=initial)
+        form = CriterionWeightCreateForm(
+            initial=initial, request=request, planning_event_id=planning_event_id
+        )
         url = reverse(
             "strategy:criterion_weight_create",
             kwargs={"planning_event_id": planning_event_id},
@@ -244,6 +256,7 @@ def criterion_weight_create(request, planning_event_id):
                 "inline_form.html",
                 {
                     "form": form,
+                    "form_id": "criterion-weight-create",
                     "url": url,
                     "button": "Save",
                 },
@@ -348,28 +361,31 @@ def planning_event_business_problem_associate(request, planning_event_id):
             msg = "Update successful!"
             summary = peba.business_problem.summary
             business_problem_id = peba.business_problem.id
-            action = reverse(
+            del_action = reverse(
                 "strategy:planning_event_business_problem_delete",
                 kwargs={
                     "planning_event_id": planning_event.pk,
                     "business_problem_id": business_problem_id,
                 },
             )
+            pk = peba.pk
         else:
             # TODO: Error logging
             is_success = False
             msg = "There was an issue adding that business problem."
+            pk = None
             summary = None
             business_problem_id = None
-            action = None
+            del_action = None
 
         return JsonResponse(
             {
                 "is_success": is_success,
                 "msg": msg,
+                "pk": pk,
                 "summary": summary,
-                "business_problem_id": business_problem_id,
-                "action": action,
+                "bp_id": business_problem_id,
+                "del_action": del_action,
             }
         )
     else:
@@ -700,7 +716,7 @@ def planning_event_strategy_score(request, planning_event_id):
                 # Bulk update existing scores
                 if updated_scores:
                     StrategyScore.objects.bulk_update(updated_scores, ["score"])
-                
+
                 # Delete null scores
                 if delete_scores:
                     StrategyScore.objects.filter(
@@ -733,6 +749,36 @@ def planning_event_strategy_score(request, planning_event_id):
     }
 
     return render(request, "strategy/planning_event_strategy.html", context)
+
+
+@logged_in_user
+@require_POST
+def planning_event_strategy_set_rank(request, planning_event_id):
+    is_success = True
+    msg = ""
+    order = {}
+    try:
+        planning_event_strategies = PlanningEventStrategy.objects.filter(
+            planning_event_id=planning_event_id,
+            planning_event__organization=request.user.organization,
+        )
+        order = {
+            o: i for i, o in enumerate(request.POST.getlist("new_order[]", []), start=1)
+        }
+        print(order)
+        updated_planning_events = []
+        for pes in planning_event_strategies:
+            if pes.rank != order[str(pes.pk)]:
+                pes.rank = order[str(pes.pk)]
+                updated_planning_events.append(pes)
+        print([(x.pk, x.rank) for x in updated_planning_events])
+        PlanningEventStrategy.objects.bulk_update(updated_planning_events, ["rank"])
+    except Exception as e:
+        # TODO: Proper exception handling/logging
+        is_success = False
+        msg = f"Error updating rank. {e}"
+    result = {"is_success": is_success, "msg": msg, "order": order}
+    return JsonResponse(result)
 
 
 @logged_in_user
@@ -872,7 +918,7 @@ def planning_event_project_score(request, planning_event_id):
                 # Bulk update existing scores
                 if updated_scores:
                     ProjectScore.objects.bulk_update(updated_scores, ["score"])
-                
+
                 # Delete null scores
                 if delete_scores:
                     ProjectScore.objects.filter(
@@ -905,6 +951,34 @@ def planning_event_project_score(request, planning_event_id):
     }
 
     return render(request, "strategy/planning_event_project.html", context)
+
+
+@logged_in_user
+@require_POST
+def planning_event_project_set_rank(request, planning_event_id):
+    is_success = True
+    msg = ""
+    order = {}
+    try:
+        planning_event_projects = PlanningEventProject.objects.filter(
+            planning_event_id=planning_event_id,
+            planning_event__organization=request.user.organization,
+        )
+        order = {
+            o: i for i, o in enumerate(request.POST.getlist("new_order[]", []), start=1)
+        }
+        updated_planning_events = []
+        for pep in planning_event_projects:
+            if pep.rank != order[str(pep.pk)]:
+                pep.rank = order[str(pep.pk)]
+                updated_planning_events.append(pep)
+        PlanningEventProject.objects.bulk_update(updated_planning_events, ["rank"])
+    except Exception as e:
+        # TODO: Proper exception handling/logging
+        is_success = False
+        msg = f"Error updating rank. {e}"
+    result = {"is_success": is_success, "msg": msg, "order": order}
+    return JsonResponse(result)
 
 
 @logged_in_user

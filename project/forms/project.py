@@ -1,7 +1,7 @@
 # Django
 from django import forms
 # App
-from account.models import Team, TimePeriod
+from account.models import Team, TimePeriod, User
 from project.models import Project
 from utils.form_utils import add_classes
 
@@ -14,10 +14,12 @@ class ProjectCreateForm(forms.ModelForm):
             "strategy",
             "created_by",
             "modified_by",
-            "teams",
             "time_period",
+            "owner",
+            "working_group",
+            "teams",
             "summary",
-            "description"
+            "description",
         ]
         widgets = {
             "organization": forms.HiddenInput(),
@@ -36,6 +38,11 @@ class ProjectCreateForm(forms.ModelForm):
             self.fields["time_period"].queryset = TimePeriod.objects.filter(
                 organization=self.request.user.organization
             )
+            users = User.objects.filter(
+                organization=self.request.user.organization
+            )
+            self.fields["owner"].queryset = users
+            self.fields["working_group"].queryset = users
         for visible in self.visible_fields():
             add_classes(visible)
 
@@ -45,8 +52,10 @@ class ProjectEditForm(forms.ModelForm):
         model = Project
         fields = [
             "modified_by",
-            "teams",
             "time_period",
+            "owner",
+            "working_group",
+            "teams",
             "summary",
             "description",
         ]
@@ -62,5 +71,10 @@ class ProjectEditForm(forms.ModelForm):
             self.fields["time_period"].queryset = TimePeriod.objects.filter(
                 organization=self.request.user.organization
             )
+            users = User.objects.filter(
+                organization=self.request.user.organization
+            )
+            self.fields["owner"].queryset = users
+            self.fields["working_group"].queryset = users
         for visible in self.visible_fields():
             add_classes(visible)

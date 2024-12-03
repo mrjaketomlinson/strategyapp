@@ -26,13 +26,21 @@ class Project(models.Model):
     description = models.TextField(blank=True)
     strategy = models.ForeignKey(
         Strategy,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         related_name="projects",
         related_query_name="project",
+        null=True,
+        blank=True
     )
     time_period = models.ForeignKey(
         TimePeriod, on_delete=models.SET_NULL, null=True, blank=True
     )
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.DO_NOTHING,
+        related_name="project_owner",
+    )
+    working_group = models.ManyToManyField(settings.AUTH_USER_MODEL)
 
 
 # class Kpi(models.Model):

@@ -1,4 +1,4 @@
-<div>
+<div id="div-{{form_id}}">
   {% if error %}
     <div class="" role="alert">
       {{ error }}
@@ -16,6 +16,7 @@
         </div>
       {% endfor %}
       <div class="col-auto">
+        <button type="button" class="btn btn-secondary" onclick="deleteInlineForm(this)" data-formid="div-{{form_id}}">Cancel</button>
         <button class="btn btn-primary" role="button" type="submit">{{ button }}</button>
       </div>
     </div>

@@ -15,7 +15,11 @@
           <tr>
             <th>Project</th>
             {% for criterion_weight in criterion_weights %}
-              <th>{{ criterion_weight.criterion.name }} (Weight: {{ criterion_weight.weight }})</th>
+              {% if criterion_weight.criterion.criterion_type == "max" %}
+                <th data-bs-toggle="tooltip" data-bs-title="A higher number is a better score." data-bs-placement="top">{{ criterion_weight.criterion.name }} (Weight: {{ criterion_weight.weight }})</th>
+              {% else %}
+                <th data-bs-toggle="tooltip" data-bs-title="A lower number is a better score." data-bs-placement="top">{{ criterion_weight.criterion.name }} (Weight: {{ criterion_weight.weight }})</th>
+              {% endif %}
             {% endfor %}
           </tr>
         </thead>
@@ -26,8 +30,26 @@
                 {% for criterion_weight in criterion_weights %}
                   <td>
                     {% get_score scores_dict pep.id criterion_weight.id as score %}
-                    <input class="form-control" type="number" name="score_{{ pep.id }}_{{ criterion_weight.id }}"
-                      value="{{ score.score }}" min="1" max="10">
+                    {% if criterion_weight.planning_event.score_value_type == "scale" %}
+                      <input class="form-control" type="number" name="score_{{ pep.id }}_{{ criterion_weight.id }}"
+                        value="{{ score.score }}" min="1" max="10">
+                    {% elif criterion_weight.planning_event.score_value_type == "fibonacci" %}
+                      <select name="score_{{ pep.id }}_{{ criterion_weight.id }}" class="form-select">
+                        <option value="">---</option>
+                        <option value="1" {% if score.score == 1 %}selected{% endif %}>1</option>
+                        <option value="2" {% if score.score == 2 %}selected{% endif %}>2</option>
+                        <option value="3" {% if score.score == 3 %}selected{% endif %}>3</option>
+                        <option value="5" {% if score.score == 5 %}selected{% endif %}>5</option>
+                        <option value="8" {% if score.score == 8 %}selected{% endif %}>8</option>
+                      </select>
+                    {% else %}
+                      <select name="score_{{ pep.id }}_{{ criterion_weight.id }}" class="form-select">
+                        <option value="">---</option>
+                        <option value="1" {% if score.score == 1 %}selected{% endif %}>Small</option>
+                        <option value="5" {% if score.score == 5 %}selected{% endif %}>Medium</option>
+                        <option value="10" {% if score.score == 10 %}selected{% endif %}>Large</option>
+                      </select>
+                    {% endif %}
                   </td>
                 {% endfor %}
             </tr>
