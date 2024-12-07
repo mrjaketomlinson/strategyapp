@@ -23,7 +23,7 @@ def time_period_all(request):
         "time_periods": time_periods,
         "breadcrumbs": [
             {"title": "Admin", "url": reverse("account:admin")},
-            {"title": "Periods", "url": reverse("account:time_period_all")},
+            {"title": "Time Periods", "url": reverse("account:time_period_all")},
         ],
     }
     return render(request, "account/time_period_all.html", context)
@@ -114,5 +114,19 @@ def time_period_detail(request, time_period_id):
         TimePeriod, pk=time_period_id, organization=request.user.organization
     )
     hierarchy = time_period.get_hierarchy()
-    context = {"time_period": time_period, "hierarchy": hierarchy}
+    context = {
+        "time_period": time_period,
+        "hierarchy": hierarchy,
+        "breadcrumbs": [
+            {"title": "Admin", "url": reverse("account:admin")},
+            {"title": "Time Periods", "url": reverse("account:time_period_all")},
+            {
+                "title": time_period.name,
+                "url": reverse(
+                    "account:time_period_detail",
+                    kwargs={"time_period_id": time_period_id},
+                ),
+            },
+        ],
+    }
     return render(request, "account/time_period_detail.html", context)

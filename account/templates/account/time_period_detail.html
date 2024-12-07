@@ -16,11 +16,43 @@
   <hr>
   <h2>Hierarchy</h2>
   {% if time_period.parent %}
-    <p>Parent: <a href="{% url 'account:time_period_detail' time_period_id=time_period.pk %}">{{ time_period.parent.name }}</a></p> 
+    <p>Parent: <a href="{% url 'account:time_period_detail' time_period_id=time_period.parent.pk %}">{{ time_period.parent.name }}</a></p> 
   {% endif %}
   <ul>
     {% include "account/time_period_hierarchy_node.html" with node=hierarchy %}
   </ul>
+  <div>
+    <h2>Planning Events</h2>
+    <ul>
+      {% for event in time_period.planningevent_set.all %}
+        <li><a href="{% url 'strategy:planning_event_detail' planning_event_id=event.pk %}">{{ event.name }}</a></li>
+      {% endfor %}
+    </ul>
+  </div>
+  <div>
+    <h2>Business Problems</h2>
+    <ul>
+      {% for bp in time_period.businessproblem_set.all %}
+        <li><a href="{% url 'strategy:business_problem_detail' business_problem_id=bp.pk %}">{{ bp.summary }}</a></li>
+      {% endfor %}
+    </ul>
+  </div>
+  <div>
+    <h2>Strategies</h2>
+    <ul>
+      {% for strategy in time_period.strategy_set.all %}
+        <li><a href="{% url 'strategy:strategy_detail' strategy_id=strategy.pk %}">{{ strategy.summary }}</a></li>
+      {% endfor %}
+    </ul>
+  </div>
+  <div>
+    <h2>Projects</h2>
+    <ul>
+      {% for project in time_period.project_set.all %}
+        <li><a href="{% url 'project:project_detail' project_id=project.pk %}">{{ project.summary }}</a></li>
+      {% endfor %}
+    </ul>
+  </div>
 </div>
 
 {% endblock %}
