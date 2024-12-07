@@ -11,15 +11,13 @@ from account.decorators import logged_in_user
 from account.models import Team
 from project.forms import ProjectCreateForm, ProjectEditForm
 from project.models import Project
-from strategy.models import Strategy
+from strategy.models import Strategy, PlanningEventStrategy, PlanningEventProject
 
 
 @logged_in_user
 @require_GET
 def project_all(request):
-    projects = Project.objects.filter(
-        organization=request.user.organization
-    )
+    projects = Project.objects.filter(organization=request.user.organization)
     context = {"projects": projects}
     return render(request, "project/project_all.html", context)
 
@@ -36,11 +34,38 @@ def project_create(request):
         url += f"?strategy_id={strategy_id}"
     else:
         strategy = None
-    
+        chosen_planning_event_strategies = None
+
     if request.method == "POST":
         form = ProjectCreateForm(request.POST, request=request)
         if form.is_valid():
             project = form.save()
+            if project.time_period:
+                project_time_hierarchy = [
+                    project.time_period
+                ] + project.time_period.get_ancestors()
+                # if strategy related to planning event strategy,
+                # in the project time period hierarchy,
+                # and the strategy is chosen,
+                # then create planning event project
+                chosen_planning_event_strategies = PlanningEventStrategy.objects.filter(
+                    strategy=strategy,
+                    is_chosen=True,
+                    planning_event__time_period__in=project_time_hierarchy,
+                )
+                if chosen_planning_event_strategies:
+                    for pes in chosen_planning_event_strategies:
+                        try:
+                            PlanningEventProject.objects.create(
+                                planning_event=pes.planning_event, project=project
+                            )
+                        except Exception as e:
+                            # TODO: proper error handling
+                            print(
+                                f"EXCEPTION: project_create | "
+                                f"can't create PlanningEventProject | "
+                                f"{pes} | {project} | {e}"
+                            )
             messages.success(request, "Project created successfully!")
             return redirect(
                 "project:project_detail",
@@ -55,11 +80,13 @@ def project_create(request):
         initial = {
             "organization": request.user.organization,
             "created_by": request.user,
-            "modified_by": request.user
+            "modified_by": request.user,
         }
         if strategy:
             initial["strategy"] = strategy
-            initial["teams"] = Team.objects.filter(businessproblem__in=strategy.business_problems.all()).distinct()
+            initial["teams"] = Team.objects.filter(
+                businessproblem__in=strategy.business_problems.all()
+            ).distinct()
         form = ProjectCreateForm(initial=initial, request=request)
     context = {
         "form": form,
@@ -83,7 +110,9 @@ def project_detail(request, project_id):
 @logged_in_user
 @require_http_methods(["GET", "POST"])
 def project_edit(request, project_id):
-    project = get_object_or_404(Project, pk=project_id, organization=request.user.organization)
+    project = get_object_or_404(
+        Project, pk=project_id, organization=request.user.organization
+    )
     if request.method == "POST":
         form = ProjectEditForm(request.POST, instance=project, request=request)
         if form.is_valid():
@@ -112,7 +141,7 @@ def project_edit(request, project_id):
             "button": "Update",
         }
         return render(request, "project/project_edit.html", context)
-    
+
 
 @logged_in_user
 @require_POST
@@ -159,4 +188,12 @@ def project_preview(request, project_id):
             f"project_preview Exception. user: {request.user}, project: {project_id}.",
             e,
         )
-    return JsonResponse({"is_success": is_success, "msg": msg, "title": title, "body": body, "footer": footer})
+    return JsonResponse(
+        {
+            "is_success": is_success,
+            "msg": msg,
+            "title": title,
+            "body": body,
+            "footer": footer,
+        }
+    )

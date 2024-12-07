@@ -155,7 +155,7 @@
               {% endif %}
             </td>
             <td class="businessProblem{{b.business_problem.pk}}-summary">{{ b.business_problem.summary }}</td>
-            <td>{{ b.final_score|floatformat:"-2" }}</td>
+            <td>{{ b.final_score|default_if_none:0|floatformat:"-2" }}</td>
             <td>
               <form class="planning-event-business-problem-del-form"
                 action="{% url 'strategy:planning_event_business_problem_delete' planning_event_id=event.pk business_problem_id=b.business_problem.pk %}"
@@ -219,7 +219,7 @@
               {% endif %}
             </td>
             <td class="strategy{{s.strategy.pk}}-summary">{{ s.strategy.summary }}</td>
-            <td>{{ s.final_score|floatformat:"-2" }}</td>
+            <td>{{ s.final_score|default_if_none:0|floatformat:"-2" }}</td>
           </tr>
           {% empty %}
           <tr id="emptyStrategies">
@@ -271,7 +271,7 @@
               {% endif %}
             </td>
             <td class="project{{p.project.pk}}-summary">{{ p.project.summary }}</td>
-            <td>{{ p.final_score|floatformat:"-2" }}</td>
+            <td>{{ p.final_score|default_if_none:0|floatformat:"-2" }}</td>
           </tr>
           {% empty %}
           <tr id="emptyProjects">

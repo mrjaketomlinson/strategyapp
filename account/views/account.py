@@ -53,7 +53,7 @@ def organization_create(request):
             user = request.user
             user.organization = organization
             user.save()
-            return redirect("account:index")
+            return redirect("account:admin")
     else:
         initial = {
             "name": request.user.get_email_domain().split(".")[0].capitalize(),

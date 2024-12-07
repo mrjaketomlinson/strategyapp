@@ -92,7 +92,18 @@ def team_edit(request, team_id):
 def team_detail(request, team_id):
     team = get_object_or_404(Team, pk=team_id, organization=request.user.organization)
     members = TeamMember.objects.filter(team=team)
-    context = {"team": team, "members": members}
+    context = {
+        "team": team,
+        "members": members,
+        "breadcrumbs": [
+            {"title": "Admin", "url": reverse("account:admin")},
+            {"title": "Teams", "url": reverse("account:team_all")},
+            {
+                "title": team.name,
+                "url": reverse("account:team_detail", kwargs={"team_id": team_id}),
+            },
+        ],
+    }
     return render(request, "account/team_detail.html", context)
 
 
